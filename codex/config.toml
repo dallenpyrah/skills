@@ -10,8 +10,6 @@ prevent_idle_sleep = true
 fast_mode = true
 child_agents_md = true
 
-[notice.model_migrations]
-"gpt-5.3-codex" = "gpt-5.4"
 
 [agents]
 max_threads = 20
