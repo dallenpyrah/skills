@@ -11,13 +11,13 @@ blue "==> Installing tools..."
 
 if ! command -v claude &>/dev/null; then
   yellow "    Installing Claude Code..."
-  npm install -g @anthropic-ai/claude-code 2>/dev/null
+  curl -fsSL https://claude.ai/install.sh | bash
 fi
 green "    ✓ claude code"
 
 if ! command -v codex &>/dev/null; then
   yellow "    Installing Codex..."
-  npm install -g @openai/codex 2>/dev/null
+  brew install --cask codex 2>/dev/null || npm i -g @openai/codex
 fi
 green "    ✓ codex"
 
