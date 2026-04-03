@@ -17,7 +17,7 @@ green "    ✓ claude code"
 
 if ! command -v codex &>/dev/null; then
   yellow "    Installing Codex..."
-  brew install --cask codex 2>/dev/null || npm i -g @openai/codex
+  brew install --cask codex
 fi
 green "    ✓ codex"
 
