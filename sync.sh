@@ -7,6 +7,20 @@ green() { printf "\033[32m%s\033[0m\n" "$1"; }
 yellow() { printf "\033[33m%s\033[0m\n" "$1"; }
 blue() { printf "\033[34m%s\033[0m\n" "$1"; }
 
+blue "==> Installing tools..."
+
+if ! command -v claude &>/dev/null; then
+  yellow "    Installing Claude Code..."
+  npm install -g @anthropic-ai/claude-code 2>/dev/null
+fi
+green "    ✓ claude code"
+
+if ! command -v codex &>/dev/null; then
+  yellow "    Installing Codex..."
+  npm install -g @openai/codex 2>/dev/null
+fi
+green "    ✓ codex"
+
 blue "==> Syncing dotfiles to this machine..."
 
 if ! grep -qF "dotfiles/shell/shared.zsh" ~/.zshrc 2>/dev/null; then
