@@ -27,4 +27,14 @@ mkdir -p ~/.codex
 cp "$DOTFILES_DIR/codex/config.toml" ~/.codex/config.toml
 green "    ✓ codex config"
 
+if command -v claude &>/dev/null; then
+  claude mcp add --transport http exa https://mcp.exa.ai/mcp 2>/dev/null || true
+  green "    ✓ claude exa mcp"
+fi
+
+if command -v codex &>/dev/null; then
+  codex mcp add exa --url https://mcp.exa.ai/mcp 2>/dev/null || true
+  green "    ✓ codex exa mcp"
+fi
+
 green "==> Done! Restart your terminal or run: source ~/.zshrc"
