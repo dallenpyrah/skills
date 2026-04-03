@@ -33,17 +33,20 @@ green "    ✓ shell config"
 cp "$DOTFILES_DIR/git/gitconfig" ~/.gitconfig
 green "    ✓ gitconfig"
 
+rm -rf ~/.claude
 mkdir -p ~/.claude
 cp "$DOTFILES_DIR/claude/settings.json" ~/.claude/settings.json
-green "    ✓ claude settings"
+green "    ✓ claude settings (forced)"
 
+rm -rf ~/.codex
 mkdir -p ~/.codex
 cp "$DOTFILES_DIR/codex/config.toml" ~/.codex/config.toml
-green "    ✓ codex config"
+green "    ✓ codex config (forced)"
 
+rm -rf ~/.config/ghostty
 mkdir -p ~/.config/ghostty
 cp "$DOTFILES_DIR/ghostty/config" ~/.config/ghostty/config
-green "    ✓ ghostty config"
+green "    ✓ ghostty config (forced)"
 
 if command -v claude &>/dev/null; then
   claude mcp add --transport http exa https://mcp.exa.ai/mcp 2>/dev/null || true
