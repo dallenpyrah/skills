@@ -37,4 +37,10 @@ if command -v codex &>/dev/null; then
   green "    ✓ codex exa mcp"
 fi
 
+if ! command -v parallel-cli &>/dev/null; then
+  yellow "    Installing parallel-cli..."
+  curl -fsSL https://parallel.ai/install.sh | bash 2>/dev/null
+fi
+green "    ✓ parallel-cli"
+
 green "==> Done! Restart your terminal or run: source ~/.zshrc"
