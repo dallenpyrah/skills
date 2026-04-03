@@ -43,4 +43,11 @@ if ! command -v parallel-cli &>/dev/null; then
 fi
 green "    ✓ parallel-cli"
 
+if [ ! -f ~/.secrets.zsh ]; then
+  cp "$DOTFILES_DIR/shell/secrets.zsh.example" ~/.secrets.zsh
+  yellow "    Created ~/.secrets.zsh — fill in your API keys"
+else
+  green "    ✓ secrets (already exists)"
+fi
+
 green "==> Done! Restart your terminal or run: source ~/.zshrc"

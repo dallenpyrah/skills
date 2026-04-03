@@ -17,3 +17,4 @@ export SDKMAN_DIR="$HOME/.sdkman"
 export GPG_TTY=${GPG_TTY:-$(tty)}
 
 source "$(dirname "${(%):-%x}")/aliases.zsh"
+[[ -f ~/.secrets.zsh ]] && source ~/.secrets.zsh
