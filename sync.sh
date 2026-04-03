@@ -41,6 +41,10 @@ mkdir -p ~/.codex
 cp "$DOTFILES_DIR/codex/config.toml" ~/.codex/config.toml
 green "    ✓ codex config"
 
+mkdir -p ~/.config/ghostty
+cp "$DOTFILES_DIR/ghostty/config" ~/.config/ghostty/config
+green "    ✓ ghostty config"
+
 if command -v claude &>/dev/null; then
   claude mcp add --transport http exa https://mcp.exa.ai/mcp 2>/dev/null || true
   green "    ✓ claude exa mcp"
