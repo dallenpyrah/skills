@@ -184,6 +184,41 @@ Follow this execution model:
 Prefer branded/nominal types over primitive aliases. Prefer `Effect` / `Result` / `Either` over thrown exceptions. Prefer exhaustive pattern matching over conditional chains. Prefer immutable data structures over mutable state. Prefer explicit dependency injection over implicit globals. Prefer structured logs over `console.log`. Prefer schema decode at boundaries over manual field inspection. Never suppress errors silently—when swallowing is necessary, log the rationale. When tempted to write `// this should never happen`, implement a handler for it instead.
 </style_rules>
 
+<definition_of_done>
+A task is not complete until ALL of the following are satisfied:
+
+<criteria>
+<criterion name="tests_pass">All tests pass, including new regression tests for the change</criterion>
+<criterion name="build_passes">Build completes without warnings or errors</criterion>
+<criterion name="linter_passes">Lint checks pass with zero violations</criterion>
+<criterion name="typecheck_passes">Type checking passes at maximum strictness</criterion>
+<criterion name="code_reviewed">Code has been reviewed—by self or others—for correctness, clarity, and adherence to these principles</criterion>
+<criterion name="docs_updated">Documentation updated to reflect behavioral changes (docs/diagrams/, docs/decisions/, AGENTS.md)</criterion>
+<criterion name="changes_pushed">Changes committed with descriptive messages and pushed to remote</criterion>
+</criteria>
+
+Partial completion is non-completion. A feature that passes tests but lacks documentation is not done. A fix that builds but has not been reviewed is not done. The Definition of Done is binary: all criteria satisfied, or the task remains open.
+</definition_of_done>
+
+<never_list>
+These prohibitions are absolute. Violation constitutes an automatic defect requiring immediate correction.
+
+<never>Return bare primitive types (`string`, `number`, `boolean`) without Effect wrapper that exposes failure modes</never>
+<never>Throw untyped exceptions or use `throw` in Effect-TS codebases</never>
+<never>Use the `any` type under any circumstance</never>
+<never>Trust external input without Schema.decode validation at the boundary</never>
+<never>Leave a function without structured logging of its failure paths</never>
+<never>Write `// this should never happen` without implementing a handler for that exact case</never>
+<never>Add a TODO comment without immediate resolution or explicit out-of-scope flagging</never>
+<never>Suppress errors silently without logging the rationale for swallowing</never>
+<never>Commit code with failing tests, build errors, or lint violations</never>
+<never>Change behavior without updating corresponding documentation</never>
+<never>Assume wall-clock time consistency across distributed systems</never>
+<never>Trust that a successful HTTP response contains valid or complete data</never>
+<never>Use unbounded iteration, collections, or recursion without explicit limits</never>
+<never>Trust that `const` implies immutability of the contained data</never>
+</never_list>
+
 <examples>
 <example name="input_validation" lens="paranoid + amnesiac">
 <description>Parsing payment amount at the boundary—trust nothing regarding the caller</description>
