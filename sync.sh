@@ -36,12 +36,14 @@ green "    ✓ gitconfig"
 rm -rf ~/.claude
 mkdir -p ~/.claude
 cp "$DOTFILES_DIR/claude/settings.json" ~/.claude/settings.json
-green "    ✓ claude settings (forced)"
+cp "$DOTFILES_DIR/AGENTS.md" ~/.claude/CLAUDE.md
+green "    ✓ claude settings + AGENTS.md (forced)"
 
 rm -rf ~/.codex
 mkdir -p ~/.codex
 cp "$DOTFILES_DIR/codex/config.toml" ~/.codex/config.toml
-green "    ✓ codex config (forced)"
+cp "$DOTFILES_DIR/AGENTS.md" ~/.codex/AGENTS.md
+green "    ✓ codex config + AGENTS.md (forced)"
 
 rm -rf ~/.config/ghostty
 mkdir -p ~/.config/ghostty
