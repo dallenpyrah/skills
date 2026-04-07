@@ -2,10 +2,32 @@
 set -e
 
 DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
+VIBEPROXY_APP="/Applications/VibeProxy.app"
 
 green() { printf "\033[32m%s\033[0m\n" "$1"; }
 yellow() { printf "\033[33m%s\033[0m\n" "$1"; }
 blue() { printf "\033[34m%s\033[0m\n" "$1"; }
+
+sync_github_secret() {
+  local secret_name="$1"
+  local current_value="${!secret_name-}"
+  local repo="dallenpyrah/devbox"
+
+  if [ -n "$current_value" ] && [ "$current_value" != "dummy-not-used" ]; then
+    return
+  fi
+
+  if ! command -v gh &>/dev/null; then
+    return
+  fi
+
+  local fetched_value
+  fetched_value="$(gh secret view "$secret_name" --repo "$repo" 2>/dev/null || true)"
+
+  if [ -n "$fetched_value" ]; then
+    export "$secret_name=$fetched_value"
+  fi
+}
 
 blue "==> Installing tools..."
 
@@ -21,6 +43,25 @@ if ! command -v codex &>/dev/null; then
 fi
 green "    ✓ codex"
 
+if ! command -v droid &>/dev/null; then
+  yellow "    Installing Droid..."
+  curl -fsSL https://factory.ai/install.sh | bash
+fi
+green "    ✓ droid"
+
+if ! command -v opencode &>/dev/null; then
+  yellow "    Installing OpenCode..."
+  brew install sst/tap/opencode
+fi
+green "    ✓ opencode"
+
+if [ ! -d "$VIBEPROXY_APP" ]; then
+  yellow "    VibeProxy.app not found in /Applications"
+  yellow "    Install it from https://github.com/automazeio/vibeproxy/releases"
+else
+  green "    ✓ vibeproxy app"
+fi
+
 blue "==> Syncing dotfiles to this machine..."
 
 if ! grep -qF "dotfiles/shell/shared.zsh" ~/.zshrc 2>/dev/null; then
@@ -29,6 +70,18 @@ if ! grep -qF "dotfiles/shell/shared.zsh" ~/.zshrc 2>/dev/null; then
   echo "source \"$DOTFILES_DIR/shell/shared.zsh\"" >> ~/.zshrc
 fi
 green "    ✓ shell config"
+
+if [ -f ~/.secrets.zsh ]; then
+  # shellcheck disable=SC1090
+  source ~/.secrets.zsh
+fi
+
+sync_github_secret PARALLEL_API_KEY
+sync_github_secret EXA_API_KEY
+sync_github_secret ANTHROPIC_API_KEY
+sync_github_secret OPENAI_API_KEY
+sync_github_secret CLI_PROXY_API_KEY
+sync_github_secret FIREWORKS_API_KEY
 
 cp "$DOTFILES_DIR/git/gitconfig" ~/.gitconfig
 green "    ✓ gitconfig"
@@ -45,6 +98,17 @@ cp "$DOTFILES_DIR/codex/config.toml" ~/.codex/config.toml
 cp "$DOTFILES_DIR/AGENTS.md" ~/.codex/AGENTS.md
 green "    ✓ codex config + AGENTS.md (forced)"
 
+mkdir -p ~/.factory
+cp "$DOTFILES_DIR/droid/settings.json" ~/.factory/settings.json
+cp "$DOTFILES_DIR/AGENTS.md" ~/.factory/AGENTS.md
+green "    ✓ droid settings + AGENTS.md"
+
+rm -rf ~/.config/opencode
+mkdir -p ~/.config/opencode
+cp "$DOTFILES_DIR/opencode/opencode.json" ~/.config/opencode/opencode.json
+cp "$DOTFILES_DIR/AGENTS.md" ~/.config/opencode/AGENTS.md
+green "    ✓ opencode config + AGENTS.md (forced)"
+
 rm -rf ~/.config/ghostty
 mkdir -p ~/.config/ghostty
 cp "$DOTFILES_DIR/ghostty/config" ~/.config/ghostty/config
@@ -60,6 +124,29 @@ if command -v codex &>/dev/null; then
   green "    ✓ codex exa mcp"
 fi
 
+if command -v droid &>/dev/null; then
+  droid mcp add exa https://mcp.exa.ai/mcp --type http 2>/dev/null || true
+  green "    ✓ droid exa mcp"
+fi
+
+if command -v droid &>/dev/null; then
+  droid plugin marketplace add https://github.com/parallel-web/parallel-agent-skills 2>/dev/null || true
+  droid plugin install parallel@parallel-agent-skills 2>/dev/null || true
+  green "    ✓ droid parallel plugin"
+fi
+
+if command -v codex &>/dev/null; then
+  codex /plugins 2>/dev/null <<'EOF' || true
+/quit
+EOF
+  green "    ✓ codex plugin config ready"
+fi
+
+if [ -d "$VIBEPROXY_APP" ]; then
+  open -gj "$VIBEPROXY_APP" 2>/dev/null || true
+  green "    ✓ vibeproxy launched"
+fi
+
 if ! command -v parallel-cli &>/dev/null; then
   yellow "    Installing parallel-cli..."
   curl -fsSL https://parallel.ai/install.sh | bash 2>/dev/null
@@ -72,5 +159,21 @@ if [ ! -f ~/.secrets.zsh ]; then
 else
   green "    ✓ secrets (already exists)"
 fi
+
+cat > ~/.secrets.zsh <<EOF
+export PARALLEL_API_KEY="${PARALLEL_API_KEY-}"
+export EXA_API_KEY="${EXA_API_KEY-}"
+export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY-}"
+export OPENAI_API_KEY="${OPENAI_API_KEY-}"
+export CLI_PROXY_API_KEY="${CLI_PROXY_API_KEY-dummy-not-used}"
+export FIREWORKS_API_KEY="${FIREWORKS_API_KEY-}"
+EOF
+green "    ✓ synced ~/.secrets.zsh"
+
+yellow "    Manual one-time setup:"
+yellow "      1. Open VibeProxy settings and connect ChatGPT/Codex and Claude/Anthropic"
+yellow "      2. Restart Droid and OpenCode after credentials are available"
+yellow "      3. In OpenCode, run /connect and add fireworks.ai if provider auth is not already present"
+yellow "      4. Select a custom model from /model or use OpenCode's configured Fireworks default"
 
 green "==> Done! Restart your terminal or run: source ~/.zshrc"

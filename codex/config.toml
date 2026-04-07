@@ -10,6 +10,13 @@ prevent_idle_sleep = true
 fast_mode = true
 child_agents_md = true
 
+[plugins."parallel@parallel-agent-skills"]
+enabled = true
+
+[marketplaces.parallel-agent-skills.source]
+source = "github"
+repo = "parallel-web/parallel-agent-skills"
+
 
 [agents]
 max_threads = 20
