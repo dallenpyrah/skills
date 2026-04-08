@@ -11,12 +11,10 @@
     }
   },
   "plugin": [
-    "opencode-openai-codex-auth"
+    "opencode-openai-codex-auth",
+    "@0xsero/open-queue"
   ],
-  "permission": {
-    "edit": "ask",
-    "bash": "ask"
-  },
+  "permission": "allow",
   "instructions": [
     "./AGENTS.md"
   ],

@@ -86,33 +86,43 @@ sync_github_secret FIREWORKS_API_KEY
 cp "$DOTFILES_DIR/git/gitconfig" ~/.gitconfig
 green "    ✓ gitconfig"
 
-rm -rf ~/.claude
 mkdir -p ~/.claude
 cp "$DOTFILES_DIR/claude/settings.json" ~/.claude/settings.json
 cp "$DOTFILES_DIR/AGENTS.md" ~/.claude/CLAUDE.md
-green "    ✓ claude settings + AGENTS.md (forced)"
+green "    ✓ claude settings + AGENTS.md"
 
-rm -rf ~/.codex
 mkdir -p ~/.codex
 cp "$DOTFILES_DIR/codex/config.toml" ~/.codex/config.toml
 cp "$DOTFILES_DIR/AGENTS.md" ~/.codex/AGENTS.md
-green "    ✓ codex config + AGENTS.md (forced)"
+green "    ✓ codex config + AGENTS.md"
 
 mkdir -p ~/.factory
 cp "$DOTFILES_DIR/droid/settings.json" ~/.factory/settings.json
 cp "$DOTFILES_DIR/AGENTS.md" ~/.factory/AGENTS.md
 green "    ✓ droid settings + AGENTS.md"
 
-rm -rf ~/.config/opencode
 mkdir -p ~/.config/opencode
 cp "$DOTFILES_DIR/opencode/opencode.json" ~/.config/opencode/opencode.json
 cp "$DOTFILES_DIR/AGENTS.md" ~/.config/opencode/AGENTS.md
-green "    ✓ opencode config + AGENTS.md (forced)"
+green "    ✓ opencode config + AGENTS.md"
 
-rm -rf ~/.config/ghostty
+# Set OPENCODE_MESSAGE_QUEUE_MODE globally for all processes
+launchctl setenv OPENCODE_MESSAGE_QUEUE_MODE hold 2>/dev/null || true
+export OPENCODE_MESSAGE_QUEUE_MODE=hold
+
+if command -v bunx &>/dev/null; then
+  bunx @0xsero/open-queue 2>/dev/null || true
+  green "    ✓ open-queue plugin"
+elif command -v npx &>/dev/null; then
+  npx @0xsero/open-queue 2>/dev/null || true
+  green "    ✓ open-queue plugin"
+else
+  yellow "    ⚠ open-queue: needs bun or node to install"
+fi
+
 mkdir -p ~/.config/ghostty
 cp "$DOTFILES_DIR/ghostty/config" ~/.config/ghostty/config
-green "    ✓ ghostty config (forced)"
+green "    ✓ ghostty config"
 
 if command -v claude &>/dev/null; then
   claude mcp add --transport http exa https://mcp.exa.ai/mcp 2>/dev/null || true
@@ -167,6 +177,7 @@ export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY-}"
 export OPENAI_API_KEY="${OPENAI_API_KEY-}"
 export CLI_PROXY_API_KEY="${CLI_PROXY_API_KEY-dummy-not-used}"
 export FIREWORKS_API_KEY="${FIREWORKS_API_KEY-}"
+export OPENCODE_MESSAGE_QUEUE_MODE="${OPENCODE_MESSAGE_QUEUE_MODE:-hold}"
 EOF
 green "    ✓ synced ~/.secrets.zsh"
 
