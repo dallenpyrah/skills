@@ -82,6 +82,7 @@ sync_github_secret ANTHROPIC_API_KEY
 sync_github_secret OPENAI_API_KEY
 sync_github_secret CLI_PROXY_API_KEY
 sync_github_secret FIREWORKS_API_KEY
+sync_github_secret MORPH_API_KEY
 
 cp "$DOTFILES_DIR/git/gitconfig" ~/.gitconfig
 green "    ✓ gitconfig"
@@ -127,16 +128,22 @@ green "    ✓ ghostty config"
 if command -v claude &>/dev/null; then
   claude mcp add --transport http exa https://mcp.exa.ai/mcp 2>/dev/null || true
   green "    ✓ claude exa mcp"
+  claude mcp add morph-mcp --scope user -e MORPH_API_KEY="${MORPH_API_KEY-}" -- npx -y @morphllm/morphmcp 2>/dev/null || true
+  green "    ✓ claude morph mcp"
 fi
 
 if command -v codex &>/dev/null; then
   codex mcp add exa --url https://mcp.exa.ai/mcp 2>/dev/null || true
   green "    ✓ codex exa mcp"
+  codex mcp add morph-mcp --env MORPH_API_KEY="${MORPH_API_KEY-}" -- npx -y @morphllm/morphmcp 2>/dev/null || true
+  green "    ✓ codex morph mcp"
 fi
 
 if command -v droid &>/dev/null; then
   droid mcp add exa https://mcp.exa.ai/mcp --type http 2>/dev/null || true
   green "    ✓ droid exa mcp"
+  droid mcp add morph-mcp -- npx -y @morphllm/morphmcp --env MORPH_API_KEY="${MORPH_API_KEY-}" 2>/dev/null || true
+  green "    ✓ droid morph mcp"
 fi
 
 if command -v droid &>/dev/null; then
@@ -177,6 +184,7 @@ export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY-}"
 export OPENAI_API_KEY="${OPENAI_API_KEY-}"
 export CLI_PROXY_API_KEY="${CLI_PROXY_API_KEY-dummy-not-used}"
 export FIREWORKS_API_KEY="${FIREWORKS_API_KEY-}"
+export MORPH_API_KEY="${MORPH_API_KEY-}"
 export OPENCODE_MESSAGE_QUEUE_MODE="${OPENCODE_MESSAGE_QUEUE_MODE:-hold}"
 EOF
 green "    ✓ synced ~/.secrets.zsh"

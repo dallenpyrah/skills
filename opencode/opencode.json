@@ -23,6 +23,13 @@
       "type": "remote",
       "url": "https://mcp.exa.ai/mcp",
       "enabled": true
+    },
+    "morph-mcp": {
+      "type": "local",
+      "command": ["npx", "-y", "@morphllm/morphmcp"],
+      "environment": {
+        "MORPH_API_KEY": "{env:MORPH_API_KEY}"
+      }
     }
   }
 }
