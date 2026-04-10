@@ -111,6 +111,9 @@ green "    ✓ opencode config + AGENTS.md"
 launchctl setenv OPENCODE_MESSAGE_QUEUE_MODE hold 2>/dev/null || true
 export OPENCODE_MESSAGE_QUEUE_MODE=hold
 
+launchctl setenv OPENCODE_EXPERIMENTAL_PLAN_MODE true 2>/dev/null || true
+export OPENCODE_EXPERIMENTAL_PLAN_MODE=true
+
 if command -v bunx &>/dev/null; then
   bunx @0xsero/open-queue 2>/dev/null || true
   green "    ✓ open-queue plugin"
@@ -186,6 +189,7 @@ export CLI_PROXY_API_KEY="${CLI_PROXY_API_KEY-dummy-not-used}"
 export FIREWORKS_API_KEY="${FIREWORKS_API_KEY-}"
 export MORPH_API_KEY="${MORPH_API_KEY-}"
 export OPENCODE_MESSAGE_QUEUE_MODE="${OPENCODE_MESSAGE_QUEUE_MODE:-hold}"
+export OPENCODE_EXPERIMENTAL_PLAN_MODE="${OPENCODE_EXPERIMENTAL_PLAN_MODE:-true}"
 EOF
 green "    ✓ synced ~/.secrets.zsh"
 

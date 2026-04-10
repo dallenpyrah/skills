@@ -16,6 +16,7 @@ export SDKMAN_DIR="$HOME/.sdkman"
 
 export GPG_TTY=${GPG_TTY:-$(tty)}
 export OPENCODE_MESSAGE_QUEUE_MODE=hold
+export OPENCODE_EXPERIMENTAL_PLAN_MODE=true
 
 source "$(dirname "${(%):-%x}")/aliases.zsh"
 [[ -f ~/.secrets.zsh ]] && source ~/.secrets.zsh
