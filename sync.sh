@@ -64,7 +64,7 @@ fi
 
 blue "==> Syncing dotfiles to this machine..."
 
-if ! grep -qF "dotfiles/shell/shared.zsh" ~/.zshrc 2>/dev/null; then
+if ! grep -qF "devbox/shell/shared.zsh" ~/.zshrc 2>/dev/null; then
   yellow "    Adding source line to ~/.zshrc"
   echo "" >> ~/.zshrc
   echo "source \"$DOTFILES_DIR/shell/shared.zsh\"" >> ~/.zshrc
@@ -90,8 +90,9 @@ green "    ✓ gitconfig"
 mkdir -p ~/.claude
 cp "$DOTFILES_DIR/claude/settings.json" ~/.claude/settings.json
 cp "$DOTFILES_DIR/claude/settings-kimi.json" ~/.claude/settings-kimi.json
+cp "$DOTFILES_DIR/claude/settings-codex.json" ~/.claude/settings-codex.json
 cp "$DOTFILES_DIR/AGENTS.md" ~/.claude/CLAUDE.md
-green "    ✓ claude settings + AGENTS.md + kimi profile"
+green "    ✓ claude settings + AGENTS.md + kimi + codex profiles"
 
 mkdir -p ~/.codex
 cp "$DOTFILES_DIR/codex/config.toml" ~/.codex/config.toml
