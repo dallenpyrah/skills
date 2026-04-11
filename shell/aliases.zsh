@@ -4,6 +4,7 @@ alias gd='git diff'
 alias gl='git log --oneline -20'
 
 alias cc='claude --dangerously-skip-permissions'
+alias cck='claude --dangerously-skip-permissions --settings ~/.claude/settings-kimi.json'
 alias cdx='codex --yolo'
 alias op='opencode'
 alias pp='parallel-cli'

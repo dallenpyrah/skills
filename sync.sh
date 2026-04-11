@@ -89,8 +89,9 @@ green "    ✓ gitconfig"
 
 mkdir -p ~/.claude
 cp "$DOTFILES_DIR/claude/settings.json" ~/.claude/settings.json
+cp "$DOTFILES_DIR/claude/settings-kimi.json" ~/.claude/settings-kimi.json
 cp "$DOTFILES_DIR/AGENTS.md" ~/.claude/CLAUDE.md
-green "    ✓ claude settings + AGENTS.md"
+green "    ✓ claude settings + AGENTS.md + kimi profile"
 
 mkdir -p ~/.codex
 cp "$DOTFILES_DIR/codex/config.toml" ~/.codex/config.toml
