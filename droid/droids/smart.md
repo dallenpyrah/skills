@@ -1,7 +1,7 @@
 ---
 name: smart
 description: State-of-the-art model agent for maximum capability and autonomy - unconstrained token usage, best models, raw power
-model: custom:Claude-Opus-4.6-Thinking-High-[Anthropic-Max]-2
+model: custom:Claude-Opus-4.6-2
 tools: ["Read", "Grep", "Glob", "Edit", "MultiEdit", "LS", "Execute", "WebSearch", "FetchUrl", "TodoWrite", "Skill", "Task"]
 ---
 

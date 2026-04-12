@@ -1,7 +1,7 @@
 ---
 name: librarian
 description: Remote codebase research agent — uses shelf to search actual codebases, parallel-ai and exa for web research
-model: custom:Claude-Sonnet-4.6-[Anthropic]-3
+model: custom:Claude-Sonnet-4.6-3
 tools: ["Read", "Grep", "Glob", "Execute", "WebSearch", "FetchUrl", "exa___web_search_exa", "exa___web_fetch_exa"]
 ---
 

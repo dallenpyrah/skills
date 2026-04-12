@@ -32,7 +32,7 @@
   "enableSkills": false,
   "specSaveEnabled": true,
   "sessionDefaultSettings": {
-    "model": "custom:Claude-Opus-4.6-Thinking-High-[Anthropic-Max]-2",
+    "model": "custom:Claude-Opus-4.6-2",
     "reasoningEffort": "high",
     "autonomyMode": "auto-high",
     "specModeReasoningEffort": "xhigh",
@@ -62,21 +62,31 @@
     },
     {
       "model": "claude-opus-4-6",
-      "id": "custom:Claude-Opus-4.6-Thinking-High-[Anthropic-Max]-2",
+      "id": "custom:Claude-Opus-4.6-2",
       "index": 2,
       "baseUrl": "http://localhost:8317",
       "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Opus 4.6 Thinking High [Anthropic Max]",
+      "displayName": "Claude Opus 4.6",
+      "maxOutputTokens": 128000,
+      "extraArgs": {
+        "thinking": { "type": "adaptive" },
+        "output_config": { "effort": "high" }
+      },
       "noImageSupport": false,
       "provider": "anthropic"
     },
     {
       "model": "claude-sonnet-4-6",
-      "id": "custom:Claude-Sonnet-4.6-Thinking-High-[Anthropic-Max]-3",
+      "id": "custom:Claude-Sonnet-4.6-3",
       "index": 3,
       "baseUrl": "http://localhost:8317",
       "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Sonnet 4.6 Thinking High [Anthropic Max]",
+      "displayName": "Claude Sonnet 4.6",
+      "maxOutputTokens": 128000,
+      "extraArgs": {
+        "thinking": { "type": "adaptive" },
+        "output_config": { "effort": "high" }
+      },
       "noImageSupport": false,
       "provider": "anthropic"
     },
@@ -122,31 +132,43 @@
     },
     {
       "model": "claude-opus-4-5-20251101",
-      "id": "custom:Claude-Opus-4.5-[Anthropic-Max]-8",
+      "id": "custom:Claude-Opus-4.5-8",
       "index": 8,
       "baseUrl": "http://localhost:8317",
       "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Opus 4.5 [Anthropic Max]",
+      "displayName": "Claude Opus 4.5",
+      "maxOutputTokens": 64000,
+      "extraArgs": {
+        "thinking": { "type": "enabled", "budget_tokens": 32000 }
+      },
       "noImageSupport": false,
       "provider": "anthropic"
     },
     {
       "model": "claude-sonnet-4-5-20250929",
-      "id": "custom:Claude-Sonnet-4.5-[Anthropic-Max]-9",
+      "id": "custom:Claude-Sonnet-4.5-9",
       "index": 9,
       "baseUrl": "http://localhost:8317",
       "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Sonnet 4.5 [Anthropic Max]",
+      "displayName": "Claude Sonnet 4.5",
+      "maxOutputTokens": 64000,
+      "extraArgs": {
+        "thinking": { "type": "enabled", "budget_tokens": 32000 }
+      },
       "noImageSupport": false,
       "provider": "anthropic"
     },
     {
       "model": "claude-haiku-4-5-20251001",
-      "id": "custom:Claude-Haiku-4.5-[Anthropic-Max]-10",
+      "id": "custom:Claude-Haiku-4.5-10",
       "index": 10,
       "baseUrl": "http://localhost:8317",
       "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Haiku 4.5 [Anthropic Max]",
+      "displayName": "Claude Haiku 4.5",
+      "maxOutputTokens": 32000,
+      "extraArgs": {
+        "thinking": { "type": "enabled", "budget_tokens": 16000 }
+      },
       "noImageSupport": false,
       "provider": "anthropic"
     }
