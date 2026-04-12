@@ -105,6 +105,7 @@ cp "$DOTFILES_DIR/AGENTS.md" ~/.factory/AGENTS.md
 # Remove legacy config.json that doesn't support env var expansion
 rm -f ~/.factory/config.json
 # Create settings.local.json with actual API keys (not synced to git)
+# Note: extraArgs for thinking don't work with VibeProxy - use Droid's Tab key for reasoning effort
 cat > ~/.factory/settings.local.json <<LOCALEOF
 {
   "customModels": [
@@ -143,41 +144,8 @@ cat > ~/.factory/settings.local.json <<LOCALEOF
     },
     {
       "model": "claude-opus-4-6",
-      "id": "custom:Claude-Opus-4.6-Max-3",
+      "id": "custom:Claude-Opus-4.6-3",
       "index": 3,
-      "baseUrl": "http://localhost:8317",
-      "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Opus 4.6 Max",
-      "extraArgs": { "thinking": { "type": "adaptive" }, "output_config": { "effort": "max" }, "max_tokens": 128000 },
-      "noImageSupport": false,
-      "provider": "anthropic"
-    },
-    {
-      "model": "claude-opus-4-6",
-      "id": "custom:Claude-Opus-4.6-High-4",
-      "index": 4,
-      "baseUrl": "http://localhost:8317",
-      "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Opus 4.6 High",
-      "extraArgs": { "thinking": { "type": "adaptive" }, "output_config": { "effort": "high" }, "max_tokens": 128000 },
-      "noImageSupport": false,
-      "provider": "anthropic"
-    },
-    {
-      "model": "claude-opus-4-6",
-      "id": "custom:Claude-Opus-4.6-Medium-5",
-      "index": 5,
-      "baseUrl": "http://localhost:8317",
-      "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Opus 4.6 Medium",
-      "extraArgs": { "thinking": { "type": "adaptive" }, "output_config": { "effort": "medium" }, "max_tokens": 128000 },
-      "noImageSupport": false,
-      "provider": "anthropic"
-    },
-    {
-      "model": "claude-opus-4-6",
-      "id": "custom:Claude-Opus-4.6-6",
-      "index": 6,
       "baseUrl": "http://localhost:8317",
       "apiKey": "${CLI_PROXY_API_KEY}",
       "displayName": "Claude Opus 4.6",
@@ -186,30 +154,8 @@ cat > ~/.factory/settings.local.json <<LOCALEOF
     },
     {
       "model": "claude-sonnet-4-6",
-      "id": "custom:Claude-Sonnet-4.6-Max-7",
-      "index": 7,
-      "baseUrl": "http://localhost:8317",
-      "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Sonnet 4.6 Max",
-      "extraArgs": { "thinking": { "type": "adaptive" }, "output_config": { "effort": "max" }, "max_tokens": 64000 },
-      "noImageSupport": false,
-      "provider": "anthropic"
-    },
-    {
-      "model": "claude-sonnet-4-6",
-      "id": "custom:Claude-Sonnet-4.6-High-8",
-      "index": 8,
-      "baseUrl": "http://localhost:8317",
-      "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Sonnet 4.6 High",
-      "extraArgs": { "thinking": { "type": "adaptive" }, "output_config": { "effort": "high" }, "max_tokens": 64000 },
-      "noImageSupport": false,
-      "provider": "anthropic"
-    },
-    {
-      "model": "claude-sonnet-4-6",
-      "id": "custom:Claude-Sonnet-4.6-9",
-      "index": 9,
+      "id": "custom:Claude-Sonnet-4.6-4",
+      "index": 4,
       "baseUrl": "http://localhost:8317",
       "apiKey": "${CLI_PROXY_API_KEY}",
       "displayName": "Claude Sonnet 4.6",
@@ -218,30 +164,8 @@ cat > ~/.factory/settings.local.json <<LOCALEOF
     },
     {
       "model": "claude-opus-4-5-20251101",
-      "id": "custom:Claude-Opus-4.5-Max-10",
-      "index": 10,
-      "baseUrl": "http://localhost:8317",
-      "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Opus 4.5 Max",
-      "extraArgs": { "thinking": { "type": "enabled", "budget_tokens": 64000 }, "max_tokens": 64000 },
-      "noImageSupport": false,
-      "provider": "anthropic"
-    },
-    {
-      "model": "claude-opus-4-5-20251101",
-      "id": "custom:Claude-Opus-4.5-High-11",
-      "index": 11,
-      "baseUrl": "http://localhost:8317",
-      "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Opus 4.5 High",
-      "extraArgs": { "thinking": { "type": "enabled", "budget_tokens": 32000 }, "max_tokens": 64000 },
-      "noImageSupport": false,
-      "provider": "anthropic"
-    },
-    {
-      "model": "claude-opus-4-5-20251101",
-      "id": "custom:Claude-Opus-4.5-12",
-      "index": 12,
+      "id": "custom:Claude-Opus-4.5-5",
+      "index": 5,
       "baseUrl": "http://localhost:8317",
       "apiKey": "${CLI_PROXY_API_KEY}",
       "displayName": "Claude Opus 4.5",
@@ -250,19 +174,8 @@ cat > ~/.factory/settings.local.json <<LOCALEOF
     },
     {
       "model": "claude-sonnet-4-5-20250929",
-      "id": "custom:Claude-Sonnet-4.5-High-13",
-      "index": 13,
-      "baseUrl": "http://localhost:8317",
-      "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Sonnet 4.5 High",
-      "extraArgs": { "thinking": { "type": "enabled", "budget_tokens": 32000 }, "max_tokens": 64000 },
-      "noImageSupport": false,
-      "provider": "anthropic"
-    },
-    {
-      "model": "claude-sonnet-4-5-20250929",
-      "id": "custom:Claude-Sonnet-4.5-14",
-      "index": 14,
+      "id": "custom:Claude-Sonnet-4.5-6",
+      "index": 6,
       "baseUrl": "http://localhost:8317",
       "apiKey": "${CLI_PROXY_API_KEY}",
       "displayName": "Claude Sonnet 4.5",
@@ -271,8 +184,8 @@ cat > ~/.factory/settings.local.json <<LOCALEOF
     },
     {
       "model": "claude-haiku-4-5-20251001",
-      "id": "custom:Claude-Haiku-4.5-15",
-      "index": 15,
+      "id": "custom:Claude-Haiku-4.5-7",
+      "index": 7,
       "baseUrl": "http://localhost:8317",
       "apiKey": "${CLI_PROXY_API_KEY}",
       "displayName": "Claude Haiku 4.5",
@@ -281,8 +194,8 @@ cat > ~/.factory/settings.local.json <<LOCALEOF
     },
     {
       "model": "gpt-5.4(xhigh)",
-      "id": "custom:GPT-5.4-XHigh-16",
-      "index": 16,
+      "id": "custom:GPT-5.4-XHigh-8",
+      "index": 8,
       "baseUrl": "http://localhost:8317/v1",
       "apiKey": "${CLI_PROXY_API_KEY}",
       "displayName": "GPT-5.4 XHigh",
@@ -291,8 +204,8 @@ cat > ~/.factory/settings.local.json <<LOCALEOF
     },
     {
       "model": "gpt-5.4(high)",
-      "id": "custom:GPT-5.4-High-17",
-      "index": 17,
+      "id": "custom:GPT-5.4-High-9",
+      "index": 9,
       "baseUrl": "http://localhost:8317/v1",
       "apiKey": "${CLI_PROXY_API_KEY}",
       "displayName": "GPT-5.4 High",
@@ -301,8 +214,8 @@ cat > ~/.factory/settings.local.json <<LOCALEOF
     },
     {
       "model": "gpt-5.4(medium)",
-      "id": "custom:GPT-5.4-Medium-18",
-      "index": 18,
+      "id": "custom:GPT-5.4-Medium-10",
+      "index": 10,
       "baseUrl": "http://localhost:8317/v1",
       "apiKey": "${CLI_PROXY_API_KEY}",
       "displayName": "GPT-5.4 Medium",
@@ -311,8 +224,8 @@ cat > ~/.factory/settings.local.json <<LOCALEOF
     },
     {
       "model": "gpt-5.4(low)",
-      "id": "custom:GPT-5.4-Low-19",
-      "index": 19,
+      "id": "custom:GPT-5.4-Low-11",
+      "index": 11,
       "baseUrl": "http://localhost:8317/v1",
       "apiKey": "${CLI_PROXY_API_KEY}",
       "displayName": "GPT-5.4 Low",
@@ -321,8 +234,8 @@ cat > ~/.factory/settings.local.json <<LOCALEOF
     },
     {
       "model": "gpt-5.4",
-      "id": "custom:GPT-5.4-None-20",
-      "index": 20,
+      "id": "custom:GPT-5.4-None-12",
+      "index": 12,
       "baseUrl": "http://localhost:8317/v1",
       "apiKey": "${CLI_PROXY_API_KEY}",
       "displayName": "GPT-5.4 None",
