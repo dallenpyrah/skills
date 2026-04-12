@@ -132,7 +132,7 @@ cat > ~/.factory/settings.local.json <<LOCALEOF
       "provider": "generic-chat-completion-api"
     },
     {
-      "model": "accounts/fireworks/models/glm-5-1",
+      "model": "accounts/fireworks/models/glm-5p1",
       "id": "custom:GLM-5.1-2",
       "index": 2,
       "baseUrl": "https://api.fireworks.ai/inference/v1",
