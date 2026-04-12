@@ -102,6 +102,10 @@ green "    ✓ codex config + AGENTS.md"
 mkdir -p ~/.factory
 cp "$DOTFILES_DIR/droid/settings.json" ~/.factory/settings.json
 cp "$DOTFILES_DIR/AGENTS.md" ~/.factory/AGENTS.md
+mkdir -p ~/.factory/droids
+cp "$DOTFILES_DIR"/droid/droids/*.md ~/.factory/droids/
+mkdir -p ~/.factory/skills
+cp -r "$DOTFILES_DIR"/droid/skills/* ~/.factory/skills/
 # Remove legacy config.json that doesn't support env var expansion
 rm -f ~/.factory/config.json
 # Create settings.local.json with actual API keys (not synced to git)

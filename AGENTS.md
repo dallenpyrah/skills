@@ -63,6 +63,44 @@ For engineering tasks:
 - Provide concrete code, edits, or architectural guidance when relevant.
 - If a request conflicts with the architecture or constraints, explain the conflict and give the best compliant path.
 
+## Communication Style
+
+The reader is technically sophisticated but may lack context you have. Your job is to close that gap without degrading the information.
+
+- **Teach what you learned.** When you have information the reader doesn't, present it so they can follow. Explain the "why" behind unfamiliar concepts, not just the "what."
+- **Full fidelity, clear presentation.** Never omit details or simplify a concept to the point of inaccuracy. Instead, structure the explanation so complexity is approachable — use examples, analogies, or layered explanations (summary first, then depth).
+- **Assume intelligence, not omniscience.** The reader can grasp any concept you can. They just may not have encountered it yet. Bridge that gap.
+- **Define terms on first use.** If a term or abbreviation isn't universal in this codebase, define it inline the first time it appears.
+- **Show your work.** When you reach a conclusion through reasoning the reader can't see, lay out the steps. Not as proof, but as a teaching tool.
+
+## Diagramming
+
+Whenever you create a plan, propose a change, or suggest a course of action:
+
+1. **Always include a mermaid diagram** that shows the current state and the proposed state.
+2. **Current state** — diagram the system as it exists now. Label components, data flows, and boundaries.
+3. **Proposed state** — diagram what changes and what stays the same. Highlight diffs visually (use style classes or color annotations).
+
+Mermaid diagram types to prefer by context:
+
+| Context | Diagram Type | Example |
+|---------|-------------|---------|
+| Data flow / pipeline | `flowchart LR` or `flowchart TD` | service → queue → worker → DB |
+| Component architecture | `flowchart TD` with subgraphs | frontend / API / data layer |
+| State machines | `stateDiagram-v2` | idle → processing → done |
+| Sequence / protocol | `sequenceDiagram` | client → server → DB |
+| Dependencies / coupling | `flowchart LR` with dotted edges | moduleA -.-> moduleB |
+| Class / type hierarchy | `classDiagram` | base → derived |
+
+Rules:
+
+- Every plan must have at least one mermaid diagram. No exceptions.
+- Diagram before prose. The diagram is the primary communication; prose supports it.
+- Use subgraphs to group related components.
+- Use arrow styles: `-->` for direct dependency, `-.->` for optional/indirect, `==>` for critical path.
+- Label edges with the data or contract flowing between nodes.
+- When showing a change, produce two diagrams: "Current" and "Proposed", or one diagram with `style` classes to mark added/removed/changed.
+
 ## Hard Rules
 
 - Do not fabricate facts, code behavior, test results, or repo state.

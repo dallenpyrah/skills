@@ -32,11 +32,11 @@
   "enableSkills": false,
   "specSaveEnabled": true,
   "sessionDefaultSettings": {
-    "model": "custom:Kimi-K2.5-Turbo-[Fireworks]-0",
+    "model": "custom:Claude-Opus-4.6-Thinking-High-[Anthropic-Max]-2",
     "reasoningEffort": "high",
     "autonomyMode": "auto-high",
-    "specModeReasoningEffort": "high",
-    "specModeModel": "custom:Claude-Opus-4.6-Thinking-High-[Anthropic-Max]-2"
+    "specModeReasoningEffort": "xhigh",
+    "specModeModel": "custom:GPT-5.4-XHigh-[ChatGPT-Pro]-4"
   },
   "customModels": [
     {
@@ -52,11 +52,11 @@
     },
     {
       "model": "gpt-5.4(high)",
-      "id": "custom:GPT-5.4-Codex-High-[ChatGPT-Pro]-1",
+      "id": "custom:GPT-5.4-High-[ChatGPT-Pro]-1",
       "index": 1,
       "baseUrl": "http://localhost:8317/v1",
       "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "GPT-5.4 Codex High [ChatGPT Pro]",
+      "displayName": "GPT-5.4 High [ChatGPT Pro]",
       "noImageSupport": false,
       "provider": "openai"
     },
@@ -91,31 +91,41 @@
     },
     {
       "model": "gpt-5.4(xhigh)",
-      "id": "custom:GPT-5.4-Codex-XHigh-[ChatGPT-Pro]-4",
+      "id": "custom:GPT-5.4-XHigh-[ChatGPT-Pro]-4",
       "index": 4,
       "baseUrl": "http://localhost:8317/v1",
       "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "GPT-5.4 Codex XHigh [ChatGPT Pro]",
+      "displayName": "GPT-5.4 XHigh [ChatGPT Pro]",
       "noImageSupport": false,
       "provider": "openai"
     },
     {
       "model": "gpt-5.4(medium)",
-      "id": "custom:GPT-5.4-Codex-Medium-[ChatGPT-Pro]-5",
+      "id": "custom:GPT-5.4-Medium-[ChatGPT-Pro]-5",
       "index": 5,
       "baseUrl": "http://localhost:8317/v1",
       "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "GPT-5.4 Codex Medium [ChatGPT Pro]",
+      "displayName": "GPT-5.4 Medium [ChatGPT Pro]",
       "noImageSupport": false,
       "provider": "openai"
     },
     {
       "model": "gpt-5.4(low)",
-      "id": "custom:GPT-5.4-Codex-Low-[ChatGPT-Pro]-6",
+      "id": "custom:GPT-5.4-Low-[ChatGPT-Pro]-6",
       "index": 6,
       "baseUrl": "http://localhost:8317/v1",
       "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "GPT-5.4 Codex Low [ChatGPT Pro]",
+      "displayName": "GPT-5.4 Low [ChatGPT Pro]",
+      "noImageSupport": false,
+      "provider": "openai"
+    },
+    {
+      "model": "gpt-5.3-codex(xhigh)",
+      "id": "custom:GPT-5.3-Codex-XHigh-[ChatGPT-Pro]-7",
+      "index": 7,
+      "baseUrl": "http://localhost:8317/v1",
+      "apiKey": "${CLI_PROXY_API_KEY}",
+      "displayName": "GPT-5.3 Codex XHigh [ChatGPT Pro]",
       "noImageSupport": false,
       "provider": "openai"
     }
