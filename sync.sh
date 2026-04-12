@@ -189,6 +189,7 @@ green "    ✓ codex config + AGENTS.md"
 # Droid
 mkdir -p ~/.factory
 cp "$DOTFILES_DIR/droid/settings.json" ~/.factory/settings.json
+cp "$DOTFILES_DIR/droid/mcp.json" ~/.factory/mcp.json
 cp "$DOTFILES_DIR/AGENTS.md" ~/.factory/AGENTS.md
 mkdir -p ~/.factory/droids
 cp "$DOTFILES_DIR"/droid/droids/*.md ~/.factory/droids/
@@ -196,7 +197,7 @@ mkdir -p ~/.factory/skills
 cp -r "$DOTFILES_DIR"/droid/skills/* ~/.factory/skills/
 rm -f ~/.factory/config.json  # legacy
 rm -f ~/.factory/settings.local.json
-green "    ✓ droid settings + AGENTS.md + droids + skills"
+green "    ✓ droid settings + mcp + AGENTS.md + droids + skills"
 
 # OpenCode
 mkdir -p ~/.config/opencode
@@ -214,18 +215,21 @@ green "    ✓ ghostty config"
 blue "==> Setting up MCP integrations..."
 
 if command -v claude &>/dev/null; then
-  claude mcp add --transport http exa https://mcp.exa.ai/mcp 2>/dev/null || true
-  green "    ✓ claude mcp (exa)"
+  claude mcp add --transport http exa https://mcp.exa.ai/mcp --scope user 2>/dev/null || true
+  claude mcp add --transport http paper http://127.0.0.1:29979/mcp --scope user 2>/dev/null || true
+  green "    ✓ claude mcp (exa, paper)"
 fi
 
 if command -v codex &>/dev/null; then
   codex mcp add exa --url https://mcp.exa.ai/mcp 2>/dev/null || true
-  green "    ✓ codex mcp (exa)"
+  codex mcp add paper --url http://127.0.0.1:29979/mcp 2>/dev/null || true
+  green "    ✓ codex mcp (exa, paper)"
 fi
 
 if command -v droid &>/dev/null; then
   droid mcp add exa https://mcp.exa.ai/mcp --type http 2>/dev/null || true
-  green "    ✓ droid mcp (exa)"
+  droid mcp add paper http://127.0.0.1:29979/mcp --type http 2>/dev/null || true
+  green "    ✓ droid mcp (exa, paper)"
 fi
 
 # ─── 6. Plugins & extras ────────────────────────────────────────────────────
