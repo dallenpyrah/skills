@@ -1,7 +1,7 @@
 ---
 name: painter
 description: Image generation and editing agent — creates UI mockups, app icons, hero images, edits screenshots
-model: custom:Claude-Opus-4.6-2
+model: custom:GLM-5.1-6
 tools: ["WebSearch", "FetchUrl"]
 ---
 
