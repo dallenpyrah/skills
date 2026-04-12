@@ -196,13 +196,15 @@ mkdir -p ~/.factory/skills
 cp -r "$DOTFILES_DIR"/droid/skills/* ~/.factory/skills/
 rm -f ~/.factory/config.json  # legacy
 
-# Generate settings.local.json with resolved API keys from Infisical
+# Generate settings.local.json with resolved API keys from Infisical.
+# IDs/indices must exactly mirror droid/settings.json — sessionDefaultSettings
+# references these IDs, and a mismatch silently breaks the default model.
 cat > ~/.factory/settings.local.json <<LOCALEOF
 {
   "customModels": [
     {
       "model": "accounts/fireworks/routers/kimi-k2p5-turbo",
-      "id": "custom:Kimi-K2.5-Turbo-0",
+      "id": "custom:Kimi-K2.5-Turbo-[Fireworks]-0",
       "index": 0,
       "baseUrl": "https://api.fireworks.ai/inference/v1",
       "apiKey": "${FIREWORKS_API_KEY}",
@@ -212,126 +214,104 @@ cat > ~/.factory/settings.local.json <<LOCALEOF
       "provider": "generic-chat-completion-api"
     },
     {
-      "model": "accounts/fireworks/models/qwen3p6-plus",
-      "id": "custom:Qwen3.6-Plus-1",
+      "model": "gpt-5.4(high)",
+      "id": "custom:GPT-5.4-High-[ChatGPT-Pro]-1",
       "index": 1,
-      "baseUrl": "https://api.fireworks.ai/inference/v1",
-      "apiKey": "${FIREWORKS_API_KEY}",
-      "displayName": "Qwen3.6 Plus [Fireworks]",
-      "maxOutputTokens": 65536,
+      "baseUrl": "http://localhost:8317/v1",
+      "apiKey": "${CLI_PROXY_API_KEY}",
+      "displayName": "GPT-5.4 High [ChatGPT Pro]",
       "noImageSupport": false,
-      "provider": "generic-chat-completion-api"
-    },
-    {
-      "model": "accounts/fireworks/models/glm-5p1",
-      "id": "custom:GLM-5.1-2",
-      "index": 2,
-      "baseUrl": "https://api.fireworks.ai/inference/v1",
-      "apiKey": "${FIREWORKS_API_KEY}",
-      "displayName": "GLM-5.1 [Fireworks]",
-      "maxOutputTokens": 131000,
-      "noImageSupport": false,
-      "provider": "generic-chat-completion-api"
+      "provider": "openai"
     },
     {
       "model": "claude-opus-4-6",
-      "id": "custom:Claude-Opus-4.6-3",
-      "index": 3,
+      "id": "custom:Claude-Opus-4.6-Thinking-High-[Anthropic-Max]-2",
+      "index": 2,
       "baseUrl": "http://localhost:8317",
       "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Opus 4.6",
+      "displayName": "Claude Opus 4.6 Thinking High [Anthropic Max]",
       "noImageSupport": false,
       "provider": "anthropic"
     },
     {
       "model": "claude-sonnet-4-6",
-      "id": "custom:Claude-Sonnet-4.6-4",
-      "index": 4,
+      "id": "custom:Claude-Sonnet-4.6-Thinking-High-[Anthropic-Max]-3",
+      "index": 3,
       "baseUrl": "http://localhost:8317",
       "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Sonnet 4.6",
-      "noImageSupport": false,
-      "provider": "anthropic"
-    },
-    {
-      "model": "claude-opus-4-5-20251101",
-      "id": "custom:Claude-Opus-4.5-5",
-      "index": 5,
-      "baseUrl": "http://localhost:8317",
-      "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Opus 4.5",
-      "noImageSupport": false,
-      "provider": "anthropic"
-    },
-    {
-      "model": "claude-sonnet-4-5-20250929",
-      "id": "custom:Claude-Sonnet-4.5-6",
-      "index": 6,
-      "baseUrl": "http://localhost:8317",
-      "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Sonnet 4.5",
-      "noImageSupport": false,
-      "provider": "anthropic"
-    },
-    {
-      "model": "claude-haiku-4-5-20251001",
-      "id": "custom:Claude-Haiku-4.5-7",
-      "index": 7,
-      "baseUrl": "http://localhost:8317",
-      "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Haiku 4.5",
+      "displayName": "Claude Sonnet 4.6 Thinking High [Anthropic Max]",
       "noImageSupport": false,
       "provider": "anthropic"
     },
     {
       "model": "gpt-5.4(xhigh)",
-      "id": "custom:GPT-5.4-XHigh-8",
-      "index": 8,
+      "id": "custom:GPT-5.4-XHigh-[ChatGPT-Pro]-4",
+      "index": 4,
       "baseUrl": "http://localhost:8317/v1",
       "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "GPT-5.4 XHigh",
-      "noImageSupport": false,
-      "provider": "openai"
-    },
-    {
-      "model": "gpt-5.4(high)",
-      "id": "custom:GPT-5.4-High-9",
-      "index": 9,
-      "baseUrl": "http://localhost:8317/v1",
-      "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "GPT-5.4 High",
+      "displayName": "GPT-5.4 XHigh [ChatGPT Pro]",
       "noImageSupport": false,
       "provider": "openai"
     },
     {
       "model": "gpt-5.4(medium)",
-      "id": "custom:GPT-5.4-Medium-10",
-      "index": 10,
+      "id": "custom:GPT-5.4-Medium-[ChatGPT-Pro]-5",
+      "index": 5,
       "baseUrl": "http://localhost:8317/v1",
       "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "GPT-5.4 Medium",
+      "displayName": "GPT-5.4 Medium [ChatGPT Pro]",
       "noImageSupport": false,
       "provider": "openai"
     },
     {
       "model": "gpt-5.4(low)",
-      "id": "custom:GPT-5.4-Low-11",
-      "index": 11,
+      "id": "custom:GPT-5.4-Low-[ChatGPT-Pro]-6",
+      "index": 6,
       "baseUrl": "http://localhost:8317/v1",
       "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "GPT-5.4 Low",
+      "displayName": "GPT-5.4 Low [ChatGPT Pro]",
       "noImageSupport": false,
       "provider": "openai"
     },
     {
-      "model": "gpt-5.4",
-      "id": "custom:GPT-5.4-None-12",
-      "index": 12,
+      "model": "gpt-5.3-codex(xhigh)",
+      "id": "custom:GPT-5.3-Codex-XHigh-[ChatGPT-Pro]-7",
+      "index": 7,
       "baseUrl": "http://localhost:8317/v1",
       "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "GPT-5.4 None",
+      "displayName": "GPT-5.3 Codex XHigh [ChatGPT Pro]",
       "noImageSupport": false,
       "provider": "openai"
+    },
+    {
+      "model": "claude-opus-4-5-20251101",
+      "id": "custom:Claude-Opus-4.5-[Anthropic-Max]-8",
+      "index": 8,
+      "baseUrl": "http://localhost:8317",
+      "apiKey": "${CLI_PROXY_API_KEY}",
+      "displayName": "Claude Opus 4.5 [Anthropic Max]",
+      "noImageSupport": false,
+      "provider": "anthropic"
+    },
+    {
+      "model": "claude-sonnet-4-5-20250929",
+      "id": "custom:Claude-Sonnet-4.5-[Anthropic-Max]-9",
+      "index": 9,
+      "baseUrl": "http://localhost:8317",
+      "apiKey": "${CLI_PROXY_API_KEY}",
+      "displayName": "Claude Sonnet 4.5 [Anthropic Max]",
+      "noImageSupport": false,
+      "provider": "anthropic"
+    },
+    {
+      "model": "claude-haiku-4-5-20251001",
+      "id": "custom:Claude-Haiku-4.5-[Anthropic-Max]-10",
+      "index": 10,
+      "baseUrl": "http://localhost:8317",
+      "apiKey": "${CLI_PROXY_API_KEY}",
+      "displayName": "Claude Haiku 4.5 [Anthropic Max]",
+      "noImageSupport": false,
+      "provider": "anthropic"
     }
   ]
 }
