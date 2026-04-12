@@ -32,7 +32,7 @@
   "enableSkills": false,
   "specSaveEnabled": true,
   "sessionDefaultSettings": {
-    "model": "custom:Claude-Opus-4.6-2",
+    "model": "custom:GPT-5.4-High-[ChatGPT-Pro]-1",
     "reasoningEffort": "high",
     "autonomyMode": "auto-high",
     "specModeReasoningEffort": "xhigh",
@@ -61,39 +61,9 @@
       "provider": "openai"
     },
     {
-      "model": "claude-opus-4-6",
-      "id": "custom:Claude-Opus-4.6-2",
-      "index": 2,
-      "baseUrl": "http://localhost:8317",
-      "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Opus 4.6",
-      "maxOutputTokens": 128000,
-      "extraArgs": {
-        "thinking": { "type": "adaptive" },
-        "output_config": { "effort": "high" }
-      },
-      "noImageSupport": false,
-      "provider": "anthropic"
-    },
-    {
-      "model": "claude-sonnet-4-6",
-      "id": "custom:Claude-Sonnet-4.6-3",
-      "index": 3,
-      "baseUrl": "http://localhost:8317",
-      "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Sonnet 4.6",
-      "maxOutputTokens": 128000,
-      "extraArgs": {
-        "thinking": { "type": "adaptive" },
-        "output_config": { "effort": "high" }
-      },
-      "noImageSupport": false,
-      "provider": "anthropic"
-    },
-    {
       "model": "gpt-5.4(xhigh)",
-      "id": "custom:GPT-5.4-XHigh-[ChatGPT-Pro]-4",
-      "index": 4,
+      "id": "custom:GPT-5.4-XHigh-[ChatGPT-Pro]-2",
+      "index": 2,
       "baseUrl": "http://localhost:8317/v1",
       "apiKey": "${CLI_PROXY_API_KEY}",
       "displayName": "GPT-5.4 XHigh [ChatGPT Pro]",
@@ -102,8 +72,8 @@
     },
     {
       "model": "gpt-5.4(medium)",
-      "id": "custom:GPT-5.4-Medium-[ChatGPT-Pro]-5",
-      "index": 5,
+      "id": "custom:GPT-5.4-Medium-[ChatGPT-Pro]-3",
+      "index": 3,
       "baseUrl": "http://localhost:8317/v1",
       "apiKey": "${CLI_PROXY_API_KEY}",
       "displayName": "GPT-5.4 Medium [ChatGPT Pro]",
@@ -112,8 +82,8 @@
     },
     {
       "model": "gpt-5.4(low)",
-      "id": "custom:GPT-5.4-Low-[ChatGPT-Pro]-6",
-      "index": 6,
+      "id": "custom:GPT-5.4-Low-[ChatGPT-Pro]-4",
+      "index": 4,
       "baseUrl": "http://localhost:8317/v1",
       "apiKey": "${CLI_PROXY_API_KEY}",
       "displayName": "GPT-5.4 Low [ChatGPT Pro]",
@@ -122,8 +92,8 @@
     },
     {
       "model": "gpt-5.3-codex(xhigh)",
-      "id": "custom:GPT-5.3-Codex-XHigh-[ChatGPT-Pro]-7",
-      "index": 7,
+      "id": "custom:GPT-5.3-Codex-XHigh-[ChatGPT-Pro]-5",
+      "index": 5,
       "baseUrl": "http://localhost:8317/v1",
       "apiKey": "${CLI_PROXY_API_KEY}",
       "displayName": "GPT-5.3 Codex XHigh [ChatGPT Pro]",
@@ -131,46 +101,15 @@
       "provider": "openai"
     },
     {
-      "model": "claude-opus-4-5-20251101",
-      "id": "custom:Claude-Opus-4.5-8",
-      "index": 8,
-      "baseUrl": "http://localhost:8317",
-      "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Opus 4.5",
-      "maxOutputTokens": 64000,
-      "extraArgs": {
-        "thinking": { "type": "enabled", "budget_tokens": 32000 }
-      },
+      "model": "accounts/fireworks/models/glm-5p1",
+      "id": "custom:GLM-5.1-6",
+      "index": 6,
+      "baseUrl": "https://api.fireworks.ai/inference/v1",
+      "apiKey": "${FIREWORKS_API_KEY}",
+      "displayName": "GLM-5.1 [Fireworks]",
+      "maxOutputTokens": 131000,
       "noImageSupport": false,
-      "provider": "anthropic"
-    },
-    {
-      "model": "claude-sonnet-4-5-20250929",
-      "id": "custom:Claude-Sonnet-4.5-9",
-      "index": 9,
-      "baseUrl": "http://localhost:8317",
-      "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Sonnet 4.5",
-      "maxOutputTokens": 64000,
-      "extraArgs": {
-        "thinking": { "type": "enabled", "budget_tokens": 32000 }
-      },
-      "noImageSupport": false,
-      "provider": "anthropic"
-    },
-    {
-      "model": "claude-haiku-4-5-20251001",
-      "id": "custom:Claude-Haiku-4.5-10",
-      "index": 10,
-      "baseUrl": "http://localhost:8317",
-      "apiKey": "${CLI_PROXY_API_KEY}",
-      "displayName": "Claude Haiku 4.5",
-      "maxOutputTokens": 32000,
-      "extraArgs": {
-        "thinking": { "type": "enabled", "budget_tokens": 16000 }
-      },
-      "noImageSupport": false,
-      "provider": "anthropic"
+      "provider": "generic-chat-completion-api"
     }
   ]
 }
