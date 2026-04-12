@@ -102,14 +102,101 @@ green "    ✓ codex config + AGENTS.md"
 mkdir -p ~/.factory
 cp "$DOTFILES_DIR/droid/settings.json" ~/.factory/settings.json
 cp "$DOTFILES_DIR/AGENTS.md" ~/.factory/AGENTS.md
-green "    ✓ droid settings + AGENTS.md"
+# Remove legacy config.json that doesn't support env var expansion
+rm -f ~/.factory/config.json
+# Create settings.local.json with actual API keys (not synced to git)
+cat > ~/.factory/settings.local.json <<LOCALEOF
+{
+  "customModels": [
+    {
+      "model": "accounts/fireworks/routers/kimi-k2p5-turbo",
+      "id": "custom:Kimi-K2.5-Turbo-[Fireworks]-0",
+      "index": 0,
+      "baseUrl": "https://api.fireworks.ai/inference/v1",
+      "apiKey": "${FIREWORKS_API_KEY}",
+      "displayName": "Kimi K2.5 Turbo [Fireworks]",
+      "maxOutputTokens": 256000,
+      "noImageSupport": false,
+      "provider": "generic-chat-completion-api"
+    },
+    {
+      "model": "gpt-5.4(high)",
+      "id": "custom:GPT-5.4-Codex-High-[ChatGPT-Pro]-1",
+      "index": 1,
+      "baseUrl": "http://localhost:8317/v1",
+      "apiKey": "${CLI_PROXY_API_KEY}",
+      "displayName": "GPT-5.4 Codex High [ChatGPT Pro]",
+      "noImageSupport": false,
+      "provider": "openai"
+    },
+    {
+      "model": "claude-opus-4-6",
+      "id": "custom:Claude-Opus-4.6-Thinking-High-[Anthropic-Max]-2",
+      "index": 2,
+      "baseUrl": "http://localhost:8317",
+      "apiKey": "${CLI_PROXY_API_KEY}",
+      "displayName": "Claude Opus 4.6 Thinking High [Anthropic Max]",
+      "extraArgs": {
+        "thinking": { "type": "adaptive" },
+        "output_config": { "effort": "high" },
+        "max_tokens": 64000
+      },
+      "noImageSupport": false,
+      "provider": "anthropic"
+    },
+    {
+      "model": "claude-sonnet-4-6",
+      "id": "custom:Claude-Sonnet-4.6-[Anthropic]-3",
+      "index": 3,
+      "baseUrl": "http://localhost:8317",
+      "apiKey": "${CLI_PROXY_API_KEY}",
+      "displayName": "Claude Sonnet 4.6 [Anthropic]",
+      "noImageSupport": false,
+      "provider": "anthropic"
+    },
+    {
+      "model": "gpt-5.4(xhigh)",
+      "id": "custom:GPT-5.4-Codex-XHigh-[ChatGPT-Pro]-4",
+      "index": 4,
+      "baseUrl": "http://localhost:8317/v1",
+      "apiKey": "${CLI_PROXY_API_KEY}",
+      "displayName": "GPT-5.4 Codex XHigh [ChatGPT Pro]",
+      "noImageSupport": false,
+      "provider": "openai"
+    },
+    {
+      "model": "gpt-5.4(medium)",
+      "id": "custom:GPT-5.4-Codex-Medium-[ChatGPT-Pro]-5",
+      "index": 5,
+      "baseUrl": "http://localhost:8317/v1",
+      "apiKey": "${CLI_PROXY_API_KEY}",
+      "displayName": "GPT-5.4 Codex Medium [ChatGPT Pro]",
+      "noImageSupport": false,
+      "provider": "openai"
+    },
+    {
+      "model": "gpt-5.4(low)",
+      "id": "custom:GPT-5.4-Codex-Low-[ChatGPT-Pro]-6",
+      "index": 6,
+      "baseUrl": "http://localhost:8317/v1",
+      "apiKey": "${CLI_PROXY_API_KEY}",
+      "displayName": "GPT-5.4 Codex Low [ChatGPT Pro]",
+      "noImageSupport": false,
+      "provider": "openai"
+    }
+  ]
+}
+LOCALEOF
+green "    ✓ droid settings + AGENTS.md + local config"
 
 mkdir -p ~/.config/opencode
 cp "$DOTFILES_DIR/opencode/opencode.json" ~/.config/opencode/opencode.json
 cp "$DOTFILES_DIR/AGENTS.md" ~/.config/opencode/AGENTS.md
 green "    ✓ opencode config + AGENTS.md"
 
-# Set OPENCODE_MESSAGE_QUEUE_MODE globally for all processes
+# Set env vars globally for GUI apps via launchctl
+launchctl setenv CLI_PROXY_API_KEY "${CLI_PROXY_API_KEY}" 2>/dev/null || true
+launchctl setenv FIREWORKS_API_KEY "${FIREWORKS_API_KEY}" 2>/dev/null || true
 launchctl setenv OPENCODE_MESSAGE_QUEUE_MODE hold 2>/dev/null || true
 export OPENCODE_MESSAGE_QUEUE_MODE=hold
 
