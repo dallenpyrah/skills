@@ -1,69 +1,166 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
 VIBEPROXY_APP="/Applications/VibeProxy.app"
+INFISICAL_ENV="${1:-dev}"
 
 green() { printf "\033[32m%s\033[0m\n" "$1"; }
 yellow() { printf "\033[33m%s\033[0m\n" "$1"; }
 blue() { printf "\033[34m%s\033[0m\n" "$1"; }
+red() { printf "\033[31m%s\033[0m\n" "$1"; }
 
-sync_github_secret() {
-  local secret_name="$1"
-  local current_value="${!secret_name-}"
-  local repo="dallenpyrah/devbox"
+# ─── 1. Prerequisites ───────────────────────────────────────────────────────
 
-  if [ -n "$current_value" ] && [ "$current_value" != "dummy-not-used" ]; then
-    return
-  fi
+blue "==> Checking prerequisites..."
 
-  if ! command -v gh &>/dev/null; then
-    return
-  fi
+if ! command -v brew &>/dev/null; then
+  yellow "    Installing Homebrew..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv 2>/dev/null || true)"
+fi
+green "    ✓ homebrew"
 
-  local fetched_value
-  fetched_value="$(gh secret view "$secret_name" --repo "$repo" 2>/dev/null || true)"
+if ! command -v gh &>/dev/null; then
+  yellow "    Installing GitHub CLI..."
+  brew install gh
+fi
+if ! gh auth status &>/dev/null 2>&1; then
+  red "    ✗ gh not authenticated. Run: gh auth login"
+  red "      Then re-run sync.sh"
+  exit 1
+fi
+green "    ✓ gh (authenticated)"
 
-  if [ -n "$fetched_value" ]; then
-    export "$secret_name=$fetched_value"
+if ! command -v bun &>/dev/null && ! command -v node &>/dev/null; then
+  yellow "    Installing bun (provides node runtime)..."
+  brew install oven-sh/bun/bun
+fi
+green "    ✓ bun/node"
+
+# ─── 2. Infisical — pull secrets ────────────────────────────────────────────
+
+blue "==> Pulling secrets from Infisical..."
+
+if ! command -v infisical &>/dev/null; then
+  yellow "    Installing Infisical CLI..."
+  brew install infisical
+else
+  brew upgrade infisical 2>/dev/null || true
+fi
+green "    ✓ infisical cli"
+
+# Check that this project is linked to Infisical
+if [ ! -f "$DOTFILES_DIR/.infisical.json" ]; then
+  red "    ✗ .infisical.json not found — run: infisical init"
+  red "      Then re-run sync.sh"
+  exit 1
+fi
+
+# Pull all secrets for the given environment into .env
+# This uses the .infisical.json in this directory for project ID + default env
+INFISICAL_API_URL="${INFISICAL_API_URL:-https://infisical-production-a65a.up.railway.app}" \
+  infisical export --env="$INFISICAL_ENV" --format=dotenv-export > "$DOTFILES_DIR/.env"
+green "    ✓ secrets pulled (env: $INFISICAL_ENV)"
+
+# Source the .env so all secrets are available as env vars for the rest of the script
+set -a
+# shellcheck disable=SC1091
+source "$DOTFILES_DIR/.env"
+set +a
+
+# ─── 3. Install / update tools ──────────────────────────────────────────────
+
+blue "==> Installing/updating tools..."
+
+brew_install_or_upgrade() {
+  local formula="$1"
+  if brew list --formula 2>/dev/null | grep -q "^${formula}$"; then
+    brew upgrade "$formula" 2>/dev/null || true
+  else
+    brew install "$formula"
   fi
 }
 
-blue "==> Installing tools..."
+brew_cask_install_or_upgrade() {
+  local cask="$1"
+  if brew list --cask 2>/dev/null | grep -q "^${cask}$"; then
+    brew upgrade --cask "$cask" 2>/dev/null || true
+  else
+    brew install --cask "$cask"
+  fi
+}
 
+# Claude Code
 if ! command -v claude &>/dev/null; then
   yellow "    Installing Claude Code..."
   curl -fsSL https://claude.ai/install.sh | bash
+else
+  claude update 2>/dev/null || true
 fi
 green "    ✓ claude code"
 
-if ! command -v codex &>/dev/null; then
-  yellow "    Installing Codex..."
-  brew install --cask codex
-fi
+# Codex
+brew_cask_install_or_upgrade codex
 green "    ✓ codex"
 
+# Droid
 if ! command -v droid &>/dev/null; then
   yellow "    Installing Droid..."
   curl -fsSL https://factory.ai/install.sh | bash
+else
+  droid update 2>/dev/null || true
 fi
 green "    ✓ droid"
 
-if ! command -v opencode &>/dev/null; then
-  yellow "    Installing OpenCode..."
-  brew install sst/tap/opencode
-fi
+# OpenCode
+brew_install_or_upgrade sst/tap/opencode
 green "    ✓ opencode"
 
+# VibeProxy — auto-download latest from GitHub releases
 if [ ! -d "$VIBEPROXY_APP" ]; then
-  yellow "    VibeProxy.app not found in /Applications"
-  yellow "    Install it from https://github.com/automazeio/vibeproxy/releases"
+  yellow "    Downloading VibeProxy latest release..."
+  VIBEPROXY_URL="$(curl -fsSL "https://api.github.com/repos/automazeio/vibeproxy/releases/latest" \
+    | grep -m1 '"browser_download_url":.*\.dmg"' \
+    | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/')"
+  if [ -n "$VIBEPROXY_URL" ]; then
+    TMPFILE="$(mktemp /tmp/vibeproxy-XXXXXX.dmg)"
+    curl -fSL -o "$TMPFILE" "$VIBEPROXY_URL"
+    hdiutil attach "$TMPFILE" -quiet -nobrowse
+    cp -R "/Volumes/VibeProxy/VibeProxy.app" /Applications/ 2>/dev/null || true
+    hdiutil detach "/Volumes/VibeProxy" -quiet 2>/dev/null || true
+    rm -f "$TMPFILE"
+    green "    ✓ vibeproxy (installed)"
+  else
+    yellow "    ⚠ Could not find VibeProxy .dmg in latest release"
+  fi
 else
-  green "    ✓ vibeproxy app"
+  green "    ✓ vibeproxy (installed)"
 fi
+
+# Shelf
+if ! command -v shelf &>/dev/null; then
+  yellow "    Installing shelf..."
+  bun install -g @rikalabs/shelf 2>/dev/null || npm install -g @rikalabs/shelf 2>/dev/null || true
+else
+  bun update -g @rikalabs/shelf 2>/dev/null || npm update -g @rikalabs/shelf 2>/dev/null || true
+fi
+green "    ✓ shelf"
+
+# Parallel CLI
+if ! command -v parallel-cli &>/dev/null; then
+  yellow "    Installing parallel-cli..."
+  curl -fsSL https://parallel.ai/install.sh | bash 2>/dev/null
+else
+  parallel-cli update 2>/dev/null || true
+fi
+green "    ✓ parallel-cli"
+
+# ─── 4. Sync dotfiles ───────────────────────────────────────────────────────
 
 blue "==> Syncing dotfiles to this machine..."
 
+# Shell config
 if ! grep -qF "devbox/shell/shared.zsh" ~/.zshrc 2>/dev/null; then
   yellow "    Adding source line to ~/.zshrc"
   echo "" >> ~/.zshrc
@@ -71,22 +168,11 @@ if ! grep -qF "devbox/shell/shared.zsh" ~/.zshrc 2>/dev/null; then
 fi
 green "    ✓ shell config"
 
-if [ -f ~/.secrets.zsh ]; then
-  # shellcheck disable=SC1090
-  source ~/.secrets.zsh
-fi
-
-sync_github_secret PARALLEL_API_KEY
-sync_github_secret EXA_API_KEY
-sync_github_secret ANTHROPIC_API_KEY
-sync_github_secret OPENAI_API_KEY
-sync_github_secret CLI_PROXY_API_KEY
-sync_github_secret FIREWORKS_API_KEY
-sync_github_secret MORPH_API_KEY
-
+# Git config
 cp "$DOTFILES_DIR/git/gitconfig" ~/.gitconfig
 green "    ✓ gitconfig"
 
+# Claude
 mkdir -p ~/.claude
 cp "$DOTFILES_DIR/claude/settings.json" ~/.claude/settings.json
 cp "$DOTFILES_DIR/claude/settings-kimi.json" ~/.claude/settings-kimi.json
@@ -94,11 +180,13 @@ cp "$DOTFILES_DIR/claude/settings-codex.json" ~/.claude/settings-codex.json
 cp "$DOTFILES_DIR/AGENTS.md" ~/.claude/CLAUDE.md
 green "    ✓ claude settings + AGENTS.md + kimi + codex profiles"
 
+# Codex
 mkdir -p ~/.codex
 cp "$DOTFILES_DIR/codex/config.toml" ~/.codex/config.toml
 cp "$DOTFILES_DIR/AGENTS.md" ~/.codex/AGENTS.md
 green "    ✓ codex config + AGENTS.md"
 
+# Droid
 mkdir -p ~/.factory
 cp "$DOTFILES_DIR/droid/settings.json" ~/.factory/settings.json
 cp "$DOTFILES_DIR/AGENTS.md" ~/.factory/AGENTS.md
@@ -106,10 +194,9 @@ mkdir -p ~/.factory/droids
 cp "$DOTFILES_DIR"/droid/droids/*.md ~/.factory/droids/
 mkdir -p ~/.factory/skills
 cp -r "$DOTFILES_DIR"/droid/skills/* ~/.factory/skills/
-# Remove legacy config.json that doesn't support env var expansion
-rm -f ~/.factory/config.json
-# Create settings.local.json with actual API keys (not synced to git)
-# Note: extraArgs for thinking don't work with VibeProxy - use Droid's Tab key for reasoning effort
+rm -f ~/.factory/config.json  # legacy
+
+# Generate settings.local.json with resolved API keys from Infisical
 cat > ~/.factory/settings.local.json <<LOCALEOF
 {
   "customModels": [
@@ -249,62 +336,54 @@ cat > ~/.factory/settings.local.json <<LOCALEOF
   ]
 }
 LOCALEOF
-green "    ✓ droid settings + AGENTS.md + local config"
+green "    ✓ droid settings + AGENTS.md + droids + skills + local config"
 
+# OpenCode
 mkdir -p ~/.config/opencode
 cp "$DOTFILES_DIR/opencode/opencode.json" ~/.config/opencode/opencode.json
 cp "$DOTFILES_DIR/AGENTS.md" ~/.config/opencode/AGENTS.md
 green "    ✓ opencode config + AGENTS.md"
 
-# Set env vars globally for GUI apps via launchctl
-launchctl setenv CLI_PROXY_API_KEY "${CLI_PROXY_API_KEY}" 2>/dev/null || true
-launchctl setenv FIREWORKS_API_KEY "${FIREWORKS_API_KEY}" 2>/dev/null || true
-launchctl setenv OPENCODE_MESSAGE_QUEUE_MODE hold 2>/dev/null || true
-export OPENCODE_MESSAGE_QUEUE_MODE=hold
-
-launchctl setenv OPENCODE_EXPERIMENTAL_PLAN_MODE true 2>/dev/null || true
-export OPENCODE_EXPERIMENTAL_PLAN_MODE=true
-
-if command -v bunx &>/dev/null; then
-  bunx @0xsero/open-queue 2>/dev/null || true
-  green "    ✓ open-queue plugin"
-elif command -v npx &>/dev/null; then
-  npx @0xsero/open-queue 2>/dev/null || true
-  green "    ✓ open-queue plugin"
-else
-  yellow "    ⚠ open-queue: needs bun or node to install"
-fi
-
+# Ghostty
 mkdir -p ~/.config/ghostty
 cp "$DOTFILES_DIR/ghostty/config" ~/.config/ghostty/config
 green "    ✓ ghostty config"
 
+# ─── 5. MCP integrations ───────────────────────────────────────────────────
+
+blue "==> Setting up MCP integrations..."
+
 if command -v claude &>/dev/null; then
   claude mcp add --transport http exa https://mcp.exa.ai/mcp 2>/dev/null || true
-  green "    ✓ claude exa mcp"
-  claude mcp add morph-mcp --scope user -e MORPH_API_KEY="${MORPH_API_KEY-}" -- npx -y @morphllm/morphmcp 2>/dev/null || true
-  green "    ✓ claude morph mcp"
+  green "    ✓ claude mcp (exa)"
 fi
 
 if command -v codex &>/dev/null; then
   codex mcp add exa --url https://mcp.exa.ai/mcp 2>/dev/null || true
-  green "    ✓ codex exa mcp"
-  codex mcp add morph-mcp --env MORPH_API_KEY="${MORPH_API_KEY-}" -- npx -y @morphllm/morphmcp 2>/dev/null || true
-  green "    ✓ codex morph mcp"
+  green "    ✓ codex mcp (exa)"
 fi
 
 if command -v droid &>/dev/null; then
   droid mcp add exa https://mcp.exa.ai/mcp --type http 2>/dev/null || true
-  green "    ✓ droid exa mcp"
-  droid mcp add morph-mcp -- npx -y @morphllm/morphmcp --env MORPH_API_KEY="${MORPH_API_KEY-}" 2>/dev/null || true
-  green "    ✓ droid morph mcp"
+  green "    ✓ droid mcp (exa)"
 fi
+
+# ─── 6. Plugins & extras ────────────────────────────────────────────────────
+
+blue "==> Setting up plugins & extras..."
 
 if command -v droid &>/dev/null; then
   droid plugin marketplace add https://github.com/parallel-web/parallel-agent-skills 2>/dev/null || true
   droid plugin install parallel@parallel-agent-skills 2>/dev/null || true
   green "    ✓ droid parallel plugin"
 fi
+
+if command -v bunx &>/dev/null; then
+  bunx @0xsero/open-queue 2>/dev/null || true
+elif command -v npx &>/dev/null; then
+  npx @0xsero/open-queue 2>/dev/null || true
+fi
+green "    ✓ open-queue plugin"
 
 if command -v codex &>/dev/null; then
   codex /plugins 2>/dev/null <<'EOF' || true
@@ -318,36 +397,37 @@ if [ -d "$VIBEPROXY_APP" ]; then
   green "    ✓ vibeproxy launched"
 fi
 
-if ! command -v parallel-cli &>/dev/null; then
-  yellow "    Installing parallel-cli..."
-  curl -fsSL https://parallel.ai/install.sh | bash 2>/dev/null
-fi
-green "    ✓ parallel-cli"
+# ─── 7. System env vars ─────────────────────────────────────────────────────
 
-if [ ! -f ~/.secrets.zsh ]; then
-  cp "$DOTFILES_DIR/shell/secrets.zsh.example" ~/.secrets.zsh
-  yellow "    Created ~/.secrets.zsh — fill in your API keys"
-else
-  green "    ✓ secrets (already exists)"
-fi
+blue "==> Setting system environment..."
 
-cat > ~/.secrets.zsh <<EOF
-export PARALLEL_API_KEY="${PARALLEL_API_KEY-}"
-export EXA_API_KEY="${EXA_API_KEY-}"
-export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY-}"
-export OPENAI_API_KEY="${OPENAI_API_KEY-}"
-export CLI_PROXY_API_KEY="${CLI_PROXY_API_KEY-dummy-not-used}"
-export FIREWORKS_API_KEY="${FIREWORKS_API_KEY-}"
-export MORPH_API_KEY="${MORPH_API_KEY-}"
-export OPENCODE_MESSAGE_QUEUE_MODE="${OPENCODE_MESSAGE_QUEUE_MODE:-hold}"
-export OPENCODE_EXPERIMENTAL_PLAN_MODE="${OPENCODE_EXPERIMENTAL_PLAN_MODE:-true}"
-EOF
-green "    ✓ synced ~/.secrets.zsh"
+launchctl setenv CLI_PROXY_API_KEY "${CLI_PROXY_API_KEY}" 2>/dev/null || true
+launchctl setenv FIREWORKS_API_KEY "${FIREWORKS_API_KEY}" 2>/dev/null || true
+launchctl setenv OPENCODE_MESSAGE_QUEUE_MODE hold 2>/dev/null || true
+launchctl setenv OPENCODE_EXPERIMENTAL_PLAN_MODE true 2>/dev/null || true
+export OPENCODE_MESSAGE_QUEUE_MODE=hold
+export OPENCODE_EXPERIMENTAL_PLAN_MODE=true
 
-yellow "    Manual one-time setup:"
-yellow "      1. Open VibeProxy settings and connect ChatGPT/Codex and Claude/Anthropic"
-yellow "      2. Restart Droid and OpenCode after credentials are available"
-yellow "      3. In OpenCode, run /connect and add fireworks.ai if provider auth is not already present"
-yellow "      4. Select a custom model from /model or use OpenCode's configured Fireworks default"
+# Write ~/.secrets.zsh so shell sessions have these vars
+# Re-export from .env so values are always current
+cat > ~/.secrets.zsh <<SECRETS
+$(cat "$DOTFILES_DIR/.env")
+export OPENCODE_MESSAGE_QUEUE_MODE="\${OPENCODE_MESSAGE_QUEUE_MODE:-hold}"
+export OPENCODE_EXPERIMENTAL_PLAN_MODE="\${OPENCODE_EXPERIMENTAL_PLAN_MODE:-true}"
+SECRETS
+green "    ✓ system env vars + ~/.secrets.zsh"
 
+# ─── 8. Summary ─────────────────────────────────────────────────────────────
+
+echo ""
 green "==> Done! Restart your terminal or run: source ~/.zshrc"
+echo ""
+yellow "  One-time setup per machine:"
+yellow "    1. Install Tailscale and join your tailnet"
+yellow "    2. INFISICAL_API_URL=https://infisical-production-a65a.up.railway.app infisical login"
+yellow "    3. INFISICAL_API_URL=https://infisical-production-a65a.up.railway.app infisical init"
+yellow "    4. Open VibeProxy settings and connect ChatGPT/Codex and Claude/Anthropic"
+echo ""
+yellow "  Usage:"
+yellow "    bash sync.sh        # pulls dev env secrets (default)"
+yellow "    bash sync.sh prod   # pulls prod env secrets"
