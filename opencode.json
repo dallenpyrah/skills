@@ -2,5 +2,54 @@
   "$schema": "https://opencode.ai/config.json",
   "plugin": [
     "@0xsero/open-queue"
-  ]
+  ],
+  "default_agent": "smart",
+  "permission": {
+    "skill": {
+      "*": "allow",
+      "debug-agent": "ask"
+    }
+  },
+  "agent": {
+    "smart": {
+      "mode": "primary",
+      "description": "State-of-the-art agent for maximum capability and autonomy"
+    },
+    "rush": {
+      "mode": "subagent",
+      "description": "Fast agent for small, well-defined tasks"
+    },
+    "deep": {
+      "mode": "subagent",
+      "description": "Deep reasoning agent for complex analysis and planning"
+    },
+    "painter": {
+      "mode": "subagent",
+      "description": "Image generation and editing specialist"
+    },
+    "librarian": {
+      "mode": "subagent",
+      "description": "Remote codebase research specialist",
+      "permission": {
+        "skill": {
+          "shelf": "allow",
+          "caveman": "allow",
+          "*": "ask"
+        }
+      }
+    },
+    "oracle": {
+      "mode": "subagent",
+      "description": "Second opinion agent for complex reasoning"
+    },
+    "reviewer": {
+      "mode": "subagent",
+      "description": "Quality gate reviewer for completed work",
+      "permission": {
+        "skill": {
+          "*": "ask"
+        }
+      }
+    }
+  }
 }

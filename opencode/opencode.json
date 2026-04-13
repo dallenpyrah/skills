@@ -10,14 +10,9 @@
       }
     }
   },
-  "plugin": [
-    "opencode-openai-codex-auth",
-    "@0xsero/open-queue"
-  ],
+  "plugin": ["@0xsero/open-queue"],
   "permission": "allow",
-  "instructions": [
-    "./AGENTS.md"
-  ],
+  "instructions": ["./AGENTS.md"],
   "mcp": {
     "exa": {
       "type": "remote",
@@ -28,13 +23,6 @@
       "type": "remote",
       "url": "http://127.0.0.1:29979/mcp",
       "enabled": true
-    },
-    "morph-mcp": {
-      "type": "local",
-      "command": ["npx", "-y", "@morphllm/morphmcp"],
-      "environment": {
-        "MORPH_API_KEY": "{env:MORPH_API_KEY}"
-      }
     }
   }
 }
