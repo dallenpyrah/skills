@@ -206,17 +206,20 @@ mkdir -p ~/.config/opencode
 # Copy main config files
 cp "$DOTFILES_DIR/opencode.json" ~/.config/opencode/opencode.json
 cp "$DOTFILES_DIR/AGENTS.md" ~/.config/opencode/AGENTS.md
-
-# Copy agents from .opencode/agents/ to ~/.config/opencode/agents/
-if [ -d "$DOTFILES_DIR/.opencode/agents" ]; then
-  mkdir -p ~/.config/opencode/agents
-  cp "$DOTFILES_DIR"/.opencode/agents/*.md ~/.config/opencode/agents/
+if [ -f "$DOTFILES_DIR/tui.json" ]; then
+  cp "$DOTFILES_DIR/tui.json" ~/.config/opencode/tui.json
 fi
 
-# Copy skills from .opencode/skills/ to ~/.config/opencode/skills/
-if [ -d "$DOTFILES_DIR/.opencode/skills" ]; then
+# Copy agents from opencode/agents/ to ~/.config/opencode/agents/
+if [ -d "$DOTFILES_DIR/opencode/agents" ]; then
+  mkdir -p ~/.config/opencode/agents
+  cp "$DOTFILES_DIR"/opencode/agents/*.md ~/.config/opencode/agents/
+fi
+
+# Copy skills from opencode/skills/ to ~/.config/opencode/skills/
+if [ -d "$DOTFILES_DIR/opencode/skills" ]; then
   mkdir -p ~/.config/opencode/skills
-  cp -r "$DOTFILES_DIR"/.opencode/skills/* ~/.config/opencode/skills/
+  cp -r "$DOTFILES_DIR"/opencode/skills/* ~/.config/opencode/skills/
 fi
 
 green "    ✓ opencode config + AGENTS.md + agents + skills"

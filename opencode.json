@@ -3,13 +3,27 @@
   "plugin": [
     "@0xsero/open-queue"
   ],
-  "default_agent": "smart",
-  "permission": {
-    "skill": {
-      "*": "allow",
-      "debug-agent": "ask"
-    }
+  "autoupdate": true,
+  "snapshot": true,
+  "share": "auto",
+  "compaction": {
+    "auto": true,
+    "prune": true,
+    "reserved": 10000
   },
+  "watcher": {
+    "ignore": [
+      "node_modules/**",
+      "dist/**",
+      ".git/**",
+      "build/**",
+      ".next/**",
+      ".turbo/**",
+      "*.log",
+      ".DS_Store"
+    ]
+  },
+  "permission": "allow",
   "agent": {
     "smart": {
       "mode": "primary",
