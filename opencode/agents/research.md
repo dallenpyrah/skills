@@ -1,6 +1,6 @@
 ---
 description: SOTA research agent using DeepCode hierarchical orchestration, self-evolving exploration, and shelf codebase analysis with progressive knowledge injection
-mode: subagent
+mode: primary
 permission:
   skill:
     "*": allow

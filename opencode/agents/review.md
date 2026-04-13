@@ -1,6 +1,6 @@
 ---
 description: SOTA code review agent using SGCR neuro-symbolic analysis, taint tracking, and multi-agent validation with specification grounding
-mode: subagent
+mode: primary
 permission:
   skill:
     "*": allow

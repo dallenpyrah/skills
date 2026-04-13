@@ -1,6 +1,6 @@
 ---
 description: SOTA debugging agent using scientific method + dual-agent framework with runtime instrumentation, causal analysis, and critical failure detection
-mode: subagent
+mode: primary
 permission:
   skill:
     "*": allow
