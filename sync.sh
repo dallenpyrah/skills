@@ -226,6 +226,11 @@ DROID_PID=$!
 (
   # OpenCode
   mkdir -p ~/.config/opencode/agents ~/.config/opencode/skills
+  # Clean old agents first
+  rm -f ~/.config/opencode/agents/smart.md ~/.config/opencode/agents/deep.md ~/.config/opencode/agents/librarian.md
+  rm -f ~/.config/opencode/agents/oracle.md ~/.config/opencode/agents/painter.md ~/.config/opencode/agents/reviewer.md
+  rm -f ~/.config/opencode/agents/rush.md
+  # Copy current configs
   cp "$DOTFILES_DIR/opencode.json" ~/.config/opencode/
   cp "$DOTFILES_DIR/AGENTS.md" ~/.config/opencode/
   cp "$DOTFILES_DIR/tui.json" ~/.config/opencode/ 2>/dev/null || true
