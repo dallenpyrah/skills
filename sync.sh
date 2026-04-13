@@ -177,8 +177,9 @@ mkdir -p ~/.claude
 cp "$DOTFILES_DIR/claude/settings.json" ~/.claude/settings.json
 cp "$DOTFILES_DIR/claude/settings-kimi.json" ~/.claude/settings-kimi.json
 cp "$DOTFILES_DIR/claude/settings-codex.json" ~/.claude/settings-codex.json
+cp "$DOTFILES_DIR/claude/settings-glm.json" ~/.claude/settings-glm.json
 cp "$DOTFILES_DIR/AGENTS.md" ~/.claude/CLAUDE.md
-green "    ✓ claude settings + AGENTS.md + kimi + codex profiles"
+green "    ✓ claude settings + AGENTS.md + kimi + codex + glm profiles"
 
 # Codex
 mkdir -p ~/.codex
