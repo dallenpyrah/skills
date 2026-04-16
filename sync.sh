@@ -194,20 +194,24 @@ GIT_PID=$!
 
 (
   # Claude
-  mkdir -p ~/.claude
+  mkdir -p ~/.claude ~/.claude/skills ~/.claude/commands
   cp "$DOTFILES_DIR/claude/settings.json" ~/.claude/
   cp "$DOTFILES_DIR/claude/settings-kimi.json" ~/.claude/ 2>/dev/null || true
   cp "$DOTFILES_DIR/claude/settings-codex.json" ~/.claude/ 2>/dev/null || true
   cp "$DOTFILES_DIR/claude/settings-glm.json" ~/.claude/ 2>/dev/null || true
   cp "$DOTFILES_DIR/AGENTS.md" ~/.claude/CLAUDE.md
+  cp -R "$DOTFILES_DIR"/claude/skills/* ~/.claude/skills/ 2>/dev/null || true
+  cp "$DOTFILES_DIR"/claude/commands/*.md ~/.claude/commands/ 2>/dev/null || true
+  cp -R "$DOTFILES_DIR"/claude/commands/autoresearch ~/.claude/commands/ 2>/dev/null || true
 ) &
 CLAUDE_PID=$!
 
 (
   # Codex
-  mkdir -p ~/.codex
+  mkdir -p ~/.codex ~/.codex/skills
   cp "$DOTFILES_DIR/codex/config.toml" ~/.codex/
   cp "$DOTFILES_DIR/AGENTS.md" ~/.codex/
+  cp -R "$DOTFILES_DIR"/codex/skills/* ~/.codex/skills/ 2>/dev/null || true
 ) &
 CODEX_PID=$!
 
@@ -225,7 +229,7 @@ DROID_PID=$!
 
 (
   # OpenCode
-  mkdir -p ~/.config/opencode/agents ~/.config/opencode/skills
+  mkdir -p ~/.config/opencode/agents ~/.config/opencode/skills ~/.config/opencode/commands
   # Clean old agents first
   rm -f ~/.config/opencode/agents/smart.md ~/.config/opencode/agents/deep.md ~/.config/opencode/agents/librarian.md
   rm -f ~/.config/opencode/agents/oracle.md ~/.config/opencode/agents/painter.md ~/.config/opencode/agents/reviewer.md
@@ -235,6 +239,7 @@ DROID_PID=$!
   cp "$DOTFILES_DIR/AGENTS.md" ~/.config/opencode/
   cp "$DOTFILES_DIR/tui.json" ~/.config/opencode/ 2>/dev/null || true
   cp "$DOTFILES_DIR"/opencode/agents/*.md ~/.config/opencode/agents/ 2>/dev/null || true
+  cp "$DOTFILES_DIR"/opencode/commands/*.md ~/.config/opencode/commands/ 2>/dev/null || true
   cp -r "$DOTFILES_DIR"/opencode/skills/* ~/.config/opencode/skills/ 2>/dev/null || true
 ) &
 OPENCODE_PID=$!
