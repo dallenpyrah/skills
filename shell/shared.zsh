@@ -1,4 +1,4 @@
-export PATH="$HOME/.local/bin:$HOME/.bun/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 
 export NVM_DIR="$HOME/.nvm"
 nvm() {
