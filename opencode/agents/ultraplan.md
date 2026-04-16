@@ -9,8 +9,6 @@ tools:
   read: true
   grep: true
   glob: true
-  edit_file: true
-  multi_edit: true
   ls: true
   bash: true
   web_search: true
