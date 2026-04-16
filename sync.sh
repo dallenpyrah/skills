@@ -5,6 +5,14 @@ DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
 VIBEPROXY_APP="/Applications/VibeProxy.app"
 INFISICAL_ENV="${1:-dev}"
 FAST_MODE="${FAST:-0}"  # Set FAST=1 to skip updates
+SCREENPIPE_TMUX_SESSION="screenpipe"
+SCREENPIPE_PORT="${SCREENPIPE_PORT:-3030}"
+SCREENPIPE_LAUNCH_AGENT_ID="com.dallen.screenpipe"
+SCREENPIPE_LAUNCH_AGENT_PATH="$HOME/Library/LaunchAgents/${SCREENPIPE_LAUNCH_AGENT_ID}.plist"
+SCREENPIPE_WATCHDOG_PATH="$DOTFILES_DIR/screenpipe/ensure-screenpipe.sh"
+SCREENPIPE_MCP_BIN=""
+
+export PATH="$HOME/.bun/bin:$HOME/.local/bin:$PATH"
 
 # Colors
 green() { printf "\033[32m%s\033[0m\n" "$1"; }
@@ -15,6 +23,65 @@ red() { printf "\033[31m%s\033[0m\n" "$1"; }
 # Fast mode helper
 should_update() {
   [[ "$FAST_MODE" != "1" ]]
+}
+
+ensure_bun_global_package() {
+  local package="$1"
+
+  if command -v bun &>/dev/null; then
+    bun install -g "$package"
+  elif command -v npm &>/dev/null; then
+    npm install -g "$package"
+  else
+    red "    ✗ cannot install $package: bun/npm unavailable"
+    exit 1
+  fi
+}
+
+ensure_screenpipe_launch_agent() {
+  mkdir -p "$HOME/Library/LaunchAgents"
+
+  cat > "$SCREENPIPE_LAUNCH_AGENT_PATH" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>${SCREENPIPE_LAUNCH_AGENT_ID}</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>${SCREENPIPE_WATCHDOG_PATH}</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key>
+    <string>${HOME}</string>
+    <key>PATH</key>
+    <string>${HOME}/.bun/bin:${HOME}/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>SCREENPIPE_PORT</key>
+    <string>${SCREENPIPE_PORT}</string>
+    <key>SCREENPIPE_TMUX_SESSION</key>
+    <string>${SCREENPIPE_TMUX_SESSION}</string>
+  </dict>
+  <key>KeepAlive</key>
+  <true/>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>${HOME}/.screenpipe/logs/launch-agent.log</string>
+  <key>StandardErrorPath</key>
+  <string>${HOME}/.screenpipe/logs/launch-agent.err.log</string>
+</dict>
+</plist>
+PLIST
+
+  chmod 644 "$SCREENPIPE_LAUNCH_AGENT_PATH"
+  mkdir -p "$HOME/.screenpipe/logs"
+
+  launchctl bootout "gui/$(id -u)" "$SCREENPIPE_LAUNCH_AGENT_PATH" >/dev/null 2>&1 || true
+  launchctl bootstrap "gui/$(id -u)" "$SCREENPIPE_LAUNCH_AGENT_PATH"
+  launchctl kickstart -k "gui/$(id -u)/${SCREENPIPE_LAUNCH_AGENT_ID}"
 }
 
 blue "==> Checking prerequisites..."
@@ -59,6 +126,18 @@ if ! command -v bun &>/dev/null && ! command -v node &>/dev/null; then
   fi
 fi
 green "    ✓ bun/node"
+
+# tmux - required for persistent ScreenPipe session management
+if ! command -v tmux &>/dev/null; then
+  if should_update; then
+    yellow "    Installing tmux..."
+    brew install tmux
+  else
+    red "    ✗ tmux required but missing"
+    exit 1
+  fi
+fi
+green "    ✓ tmux"
 
 blue "==> Pulling secrets from Infisical..."
 
@@ -168,6 +247,30 @@ if ! command -v shelf &>/dev/null; then
 fi
 green "    ✓ shelf"
 
+# ScreenPipe CLI + MCP runtime
+if ! command -v screenpipe &>/dev/null; then
+  yellow "    Installing ScreenPipe CLI..."
+  ensure_bun_global_package screenpipe
+else
+  green "    ✓ screenpipe cli"
+fi
+
+if ! command -v screenpipe-mcp &>/dev/null; then
+  yellow "    Installing ScreenPipe MCP..."
+  ensure_bun_global_package screenpipe-mcp
+else
+  green "    ✓ screenpipe mcp"
+fi
+
+SCREENPIPE_MCP_BIN="$(command -v screenpipe-mcp || true)"
+if [[ -z "$SCREENPIPE_MCP_BIN" && -x "$HOME/.bun/bin/screenpipe-mcp" ]]; then
+  SCREENPIPE_MCP_BIN="$HOME/.bun/bin/screenpipe-mcp"
+fi
+if [[ -z "$SCREENPIPE_MCP_BIN" ]]; then
+  red "    ✗ screenpipe-mcp binary not found after install"
+  exit 1
+fi
+
 # Parallel CLI - fast check
 if ! command -v parallel-cli &>/dev/null; then
   yellow "    Installing parallel-cli..."
@@ -259,12 +362,19 @@ blue "==> Setting up MCP..."
 if command -v claude &>/dev/null; then
   claude mcp add --transport http exa https://mcp.exa.ai/mcp --scope user 2>/dev/null || true
   claude mcp add --transport http paper http://127.0.0.1:29979/mcp --scope user 2>/dev/null || true
+  claude mcp remove screenpipe --scope user 2>/dev/null || true
+  claude mcp add screenpipe --scope user -- "$SCREENPIPE_MCP_BIN" 2>/dev/null || true
   green "    ✓ claude mcp"
 fi
 
 if command -v codex &>/dev/null; then
-  codex mcp add exa --url https://mcp.exa.ai/mcp 2>/dev/null || true
-  codex mcp add paper --url http://127.0.0.1:29979/mcp 2>/dev/null || true
+  while read -r mcp_name; do
+    if [[ -n "$mcp_name" && "$mcp_name" != "screenpipe" ]]; then
+      codex mcp remove "$mcp_name" 2>/dev/null || true
+    fi
+  done < <(codex mcp list 2>/dev/null | awk 'NR > 1 {print $1}')
+  codex mcp remove screenpipe 2>/dev/null || true
+  codex mcp add screenpipe -- "$SCREENPIPE_MCP_BIN" 2>/dev/null || true
   green "    ✓ codex mcp"
 fi
 
@@ -315,6 +425,7 @@ launchctl setenv OPENCODE_EXPERIMENTAL_PLAN_MODE true 2>/dev/null || true
 
 export OPENCODE_MESSAGE_QUEUE_MODE=hold
 export OPENCODE_EXPERIMENTAL_PLAN_MODE=true
+launchctl setenv SCREENPIPE_PORT "${SCREENPIPE_PORT}" 2>/dev/null || true
 
 # Write secrets file
 cat > ~/.secrets.zsh <<SECRETS
@@ -324,6 +435,15 @@ export OPENCODE_EXPERIMENTAL_PLAN_MODE="\${OPENCODE_EXPERIMENTAL_PLAN_MODE:-true
 SECRETS
 
 green "    ✓ environment set"
+
+# ─── ScreenPipe autostart (always run) ──────────────────────────────────────
+
+blue "==> Setting up ScreenPipe..."
+
+chmod +x "$SCREENPIPE_WATCHDOG_PATH"
+ensure_screenpipe_launch_agent
+
+green "    ✓ screenpipe launch agent"
 
 # ─── Summary ───────────────────────────────────────────────────────────────
 
