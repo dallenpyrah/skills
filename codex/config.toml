@@ -21,3 +21,19 @@ repo = "parallel-web/parallel-agent-skills"
 [agents]
 max_threads = 20
 max_depth = 3
+
+[mcp_servers.exa]
+url = "https://mcp.exa.ai/mcp"
+
+[mcp_servers.paper]
+url = "http://127.0.0.1:29979/mcp"
+
+[mcp_servers.gh_grep]
+url = "https://mcp.grep.app"
+
+[mcp_servers.context7]
+url = "https://mcp.context7.com/mcp"
+
+[mcp_servers.ast-grep]
+command = "uvx"
+args = ["--from", "git+https://github.com/ast-grep/ast-grep-mcp", "ast-grep-server"]

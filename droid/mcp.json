@@ -9,6 +9,22 @@
       "type": "http",
       "url": "https://mcp.exa.ai/mcp",
       "disabled": false
+    },
+    "gh_grep": {
+      "type": "http",
+      "url": "https://mcp.grep.app",
+      "disabled": false
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "disabled": false
+    },
+    "ast-grep": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/ast-grep/ast-grep-mcp", "ast-grep-server"],
+      "disabled": false
     }
   }
 }

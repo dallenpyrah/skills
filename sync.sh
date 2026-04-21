@@ -175,6 +175,20 @@ if ! command -v parallel-cli &>/dev/null; then
 fi
 green "    ✓ parallel-cli"
 
+# uv / uvx - prereq for ast-grep MCP and other python-based MCPs
+if ! command -v uvx &>/dev/null; then
+  yellow "    Installing uv..."
+  curl -LsSf https://astral.sh/uv/install.sh | sh 2>/dev/null || true
+fi
+green "    ✓ uv/uvx"
+
+# ast-grep - prereq for ast-grep MCP (runs as subprocess of the server)
+if ! command -v ast-grep &>/dev/null; then
+  yellow "    Installing ast-grep..."
+  brew install ast-grep 2>/dev/null || true
+fi
+green "    ✓ ast-grep"
+
 # ─── Sync dotfiles (always run) ─────────────────────────────────────────────
 
 blue "==> Syncing dotfiles..."
@@ -264,18 +278,27 @@ blue "==> Setting up MCP..."
 if command -v claude &>/dev/null; then
   claude mcp add --transport http exa https://mcp.exa.ai/mcp --scope user 2>/dev/null || true
   claude mcp add --transport http paper http://127.0.0.1:29979/mcp --scope user 2>/dev/null || true
+  claude mcp add --transport http gh_grep https://mcp.grep.app --scope user 2>/dev/null || true
+  claude mcp add --transport http context7 https://mcp.context7.com/mcp --scope user 2>/dev/null || true
+  claude mcp add --scope user ast-grep -- uvx --from git+https://github.com/ast-grep/ast-grep-mcp ast-grep-server 2>/dev/null || true
   green "    ✓ claude mcp"
 fi
 
 if command -v codex &>/dev/null; then
   codex mcp add exa --url https://mcp.exa.ai/mcp 2>/dev/null || true
   codex mcp add paper --url http://127.0.0.1:29979/mcp 2>/dev/null || true
+  codex mcp add gh_grep --url https://mcp.grep.app 2>/dev/null || true
+  codex mcp add context7 --url https://mcp.context7.com/mcp 2>/dev/null || true
+  # ast-grep is stdio — provisioned via devbox/codex/config.toml file copy above
   green "    ✓ codex mcp"
 fi
 
 if command -v droid &>/dev/null; then
   droid mcp add exa https://mcp.exa.ai/mcp --type http 2>/dev/null || true
   droid mcp add paper http://127.0.0.1:29979/mcp --type http 2>/dev/null || true
+  droid mcp add gh_grep https://mcp.grep.app --type http 2>/dev/null || true
+  droid mcp add context7 https://mcp.context7.com/mcp --type http 2>/dev/null || true
+  # ast-grep is stdio — provisioned via devbox/droid/mcp.json file copy above
   green "    ✓ droid mcp"
 fi
 

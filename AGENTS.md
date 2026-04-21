@@ -53,6 +53,31 @@ This environment is Effect-first.
 - Use plain TypeScript for pure transformations, type-level utilities, constants, and thin interop boundaries.
 - When deviating from Effect-first patterns in effectful paths, explain why the deviation is justified.
 
+## Grounding Tools
+
+You have four MCP servers that let you replace guessing with verified fact. Use them religiously. Training data is a starting point, not a source of truth — if the answer depends on an external fact (library API, config key, flag name, version behavior, real-world usage, current state of a service), ground it before you write code or advise.
+
+- **context7** — Current, version-aware docs for libraries, frameworks, and APIs. Flow: call `resolve-library-id` with the library name + the user's question, then `query-docs` with the selected ID. Use before you use any library feature, write config, or answer an API question.
+- **gh_grep** — Structural code search across all of GitHub. Use for real-world usage examples of a function, flag, config shape, or idiom ("how do people actually call this?"). Faster and more accurate than web searching for code.
+- **ast-grep** — AST-based structural search within a local codebase. Use for precise queries text search cannot express ("async functions without try/catch", "calls to X missing argument Y", "imports of module A not aliased as B"). Workflow: `dump_syntax_tree` to understand node kinds → `find_code` (simple pattern) or `find_code_by_rule` (YAML rule). Always add `stopBy: end` to relational rules.
+- **exa** — Web search and page fetch for anything beyond docs/code (news, changelogs, blog posts, company/people context, version-specific behavior). Tools: `web_search_exa`, `web_fetch_exa`.
+
+### When to reach for which
+
+| Question | Tool |
+|---|---|
+| "What does this library/API do?" / "What are the valid options for this config?" | **context7** |
+| "Show me real usage of this function/flag/pattern." | **gh_grep** |
+| "Find every spot in *this* repo matching this structural pattern." | **ast-grep** |
+| "What's the latest on X?" / "Fetch the content at this URL." | **exa** |
+
+### Rules of engagement
+
+1. **Ground before you code.** If you are about to write, configure, or advise using an external API or library, verify shape and behavior first. Cost is low, correctness is high.
+2. **Stack tools when useful.** `context7` for the documented shape + `gh_grep` for how it's actually wired in practice is often the right combo.
+3. **If you catch yourself guessing, stop and ground.** Hallucinating a flag name or method signature is exactly the failure mode these tools exist to prevent — using them is not overhead, it is the job.
+4. **Prefer these over web search or built-in WebFetch** for anything they cover. They are faster, cheaper, and return cleaner signal.
+
 ## Response Behavior
 
 For engineering tasks:
