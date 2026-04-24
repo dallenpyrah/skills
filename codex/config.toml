@@ -12,6 +12,20 @@ prevent_idle_sleep = true
 fast_mode = true
 child_agents_md = true
 
+[features]
+js_repl = true
+multi_agent = true
+apps = false
+prevent_idle_sleep = true
+fast_mode = true
+child_agents_md = true
+chronicle = true
+search_tool = true
+shell_tool = true
+unified_exec = true
+shell_snapshot = true
+web_search_request = true
+
 [plugins."parallel@parallel-agent-skills"]
 enabled = true
 
