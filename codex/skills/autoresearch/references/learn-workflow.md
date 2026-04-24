@@ -87,7 +87,7 @@ $autoresearch learn
 **Steps:**
 
 1. Scan codebase, calculate files/LOC per directory
-2. **Exclusion list:** `.claude`, `.opencode`, `.git`, `node_modules`, `__pycache__`, `secrets`, `vendor`, `dist`, `build`, `.next`, `.nuxt`, `coverage`, `generated`, `*.min.js`, `.cache`, `.tmp`
+2. **Exclusion list:** `.claude`, `.git`, `node_modules`, `__pycache__`, `secrets`, `vendor`, `dist`, `build`, `.next`, `.nuxt`, `coverage`, `generated`, `*.min.js`, `.cache`, `.tmp`
    - **Test directories (`tests`, `__tests__`) are NOT excluded** — scouts should scan test structure (file patterns, frameworks, fixtures) for testing-guide.md generation. Scouts read test metadata, not individual test logic.
 3. **Scale awareness:**
    - Count total files: `find . -type f -not -path './.git/*' -not -path '*/node_modules/*' | wc -l`

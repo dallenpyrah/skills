@@ -1,6 +1,8 @@
 model = "gpt-5.4"
 plan_mode_reasoning_effort = "high"
 model_reasoning_effort = "high"
+web_search = "live"
+suppress_unstable_features_warning = true
 
 [features]
 js_repl = true

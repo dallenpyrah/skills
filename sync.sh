@@ -1,502 +1,236 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
+DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VIBEPROXY_APP="/Applications/VibeProxy.app"
 
-# Default options (all enabled)
-OPT_FAST=0
-OPT_SECRETS=1
-OPT_SYSTEMS=1
-OPT_TOOLS=1
-OPT_DOTFILES=1
-OPT_MCP=1
-OPT_EXTRAS=1
+FAST=0
+SECRETS=1
+SYSTEMS=1
+TOOLS=1
+DOTFILES=1
+MCP=1
+EXTRAS=1
 
-# Parse options
-while [ $# -gt 0 ]; do
+usage() {
+  cat <<USAGE
+Usage: $0 [options]
+
+Options:
+  --fast           Skip updates and secret pull
+  --secrets        Pull secrets from Infisical
+  --no-secrets     Skip pulling secrets from Infisical
+  --systems        Install system prerequisites
+  --no-systems     Skip system prerequisites
+  --tools          Install dev tools
+  --no-tools       Skip dev tools
+  --dotfiles       Sync dotfiles
+  --no-dotfiles    Skip dotfile sync
+  --mcp            Configure MCP servers
+  --no-mcp         Skip MCP setup
+  --extras         Run extras
+  --no-extras      Skip extras
+USAGE
+}
+
+while (($#)); do
   case "$1" in
-    --fast)
-      OPT_FAST=1
-      OPT_SECRETS=0
-      shift
-      ;;
-    --skip-secrets|--no-secrets)
-      OPT_SECRETS=0
-      shift
-      ;;
-    --secrets)
-      OPT_SECRETS=1
-      shift
-      ;;
-    --skip-systems|--no-systems)
-      OPT_SYSTEMS=0
-      shift
-      ;;
-    --systems)
-      OPT_SYSTEMS=1
-      shift
-      ;;
-    --skip-tools|--no-tools)
-      OPT_TOOLS=0
-      shift
-      ;;
-    --tools)
-      OPT_TOOLS=1
-      shift
-      ;;
-    --skip-dotfiles|--no-dotfiles)
-      OPT_DOTFILES=0
-      shift
-      ;;
-    --dotfiles)
-      OPT_DOTFILES=1
-      shift
-      ;;
-    --skip-mcp|--no-mcp)
-      OPT_MCP=0
-      shift
-      ;;
-    --mcp)
-      OPT_MCP=1
-      shift
-      ;;
-    --skip-extras|--no-extras)
-      OPT_EXTRAS=0
-      shift
-      ;;
-    --extras)
-      OPT_EXTRAS=1
-      shift
-      ;;
-    -h|--help|help)
-      echo "Usage: $0 [options]"
-      echo ""
-      echo "Options:"
-      echo "  --fast           Skip all updates (install only if missing)"
-      echo "  --secrets        Pull secrets from Infisical (default)"
-      echo "  --no-secrets     Skip pulling secrets from Infisical"
-      echo "  --systems        Install system tools (default)"
-      echo "  --no-systems     Skip installing system tools"
-      echo "  --tools         Install dev tools (default)"
-      echo "  --no-tools      Skip installing dev tools"
-      echo "  --dotfiles      Sync dotfiles (default)"
-      echo "  --no-dotfiles  Skip syncing dotfiles"
-      echo "  --mcp          Setup MCP servers (default)"
-      echo "  --no-mcp       Skip MCP setup"
-      echo "  --extras      Install plugins/extras (default)"
-      echo "  --no-extras   Skip extras"
-      echo ""
-      echo "Examples:"
-      echo "  $0                  # Full sync (default)"
-      echo "  $0 --fast           # Fast mode - skip updates"
-      echo "  $0 --no-secrets     # Skip Infisical"
-      echo "  $0 --no-tools --no-mcp  # Only sync dotfiles"
-      exit 0
-      ;;
-    *)
-      echo "Unknown option: $1"
-      echo "Run '$0 --help' for usage"
-      exit 1
-      ;;
+    --fast) FAST=1; SECRETS=0 ;;
+    --secrets) SECRETS=1 ;;
+    --skip-secrets|--no-secrets) SECRETS=0 ;;
+    --systems) SYSTEMS=1 ;;
+    --skip-systems|--no-systems) SYSTEMS=0 ;;
+    --tools) TOOLS=1 ;;
+    --skip-tools|--no-tools) TOOLS=0 ;;
+    --dotfiles) DOTFILES=1 ;;
+    --skip-dotfiles|--no-dotfiles) DOTFILES=0 ;;
+    --mcp) MCP=1 ;;
+    --skip-mcp|--no-mcp) MCP=0 ;;
+    --extras) EXTRAS=1 ;;
+    --skip-extras|--no-extras) EXTRAS=0 ;;
+    -h|--help|help) usage; exit 0 ;;
+    *) exit 2 ;;
   esac
+  shift
 done
+
+if [[ "${SYNC_VERBOSE:-0}" != "1" ]]; then
+  exec >/dev/null 2>&1
+fi
 
 INFISICAL_ENV="${INFISICAL_ENV:-dev}"
 
-# Colors
-green() { printf "\033[32m%s\033[0m\n" "$1"; }
-yellow() { printf "\033[33m%s\033[0m\n" "$1"; }
-blue() { printf "\033[34m%s\033[0m\n" "$1"; }
-red() { printf "\033[31m%s\033[0m\n" "$1"; }
-
-# Fast mode helper
-should_update() {
-  [[ "$OPT_FAST" != "1" ]]
+enabled() {
+  [[ "$1" == "1" ]]
 }
 
-###############################################################################
-# Systems: brew, gh, bun (prereqs)
-###############################################################################
-if [ "$OPT_SYSTEMS" = "1" ]; then
-  blue "==> Checking prerequisites..."
+can_update() {
+  [[ "$FAST" != "1" ]]
+}
 
-  # Homebrew - only install if missing (check is fast)
-  if ! command -v brew &>/dev/null; then
-    if should_update; then
-      yellow "    Installing Homebrew..."
-      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-      eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv 2>/dev/null || true)"
-    else
-      red "    ✗ homebrew required but missing (set FAST=0 to auto-install)"
-      exit 1
-    fi
+has() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+append_once() {
+  local line="$1"
+  local file="$2"
+
+  touch "$file"
+  grep -qF "$line" "$file" || printf '\n%s\n' "$line" >> "$file"
+}
+
+install_systems() {
+  if ! has brew; then
+    can_update || exit 1
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv 2>/dev/null || true)"
   fi
-  green "    ✓ homebrew"
 
-  # GitHub CLI - fast check
-  if ! command -v gh &>/dev/null; then
-    if should_update; then
-      yellow "    Installing GitHub CLI..."
-      brew install gh
-    else
-      red "    ✗ gh required but missing"
-      exit 1
-    fi
+  if ! has gh; then
+    can_update || exit 1
+    brew install gh
   fi
-  if ! gh auth status &>/dev/null 2>&1; then
-    red "    ✗ gh not authenticated. Run: gh auth login"
-    exit 1
+
+  gh auth status >/dev/null 2>&1 || exit 1
+
+  if ! has bun && ! has node; then
+    can_update || exit 1
+    brew install oven-sh/bun/bun
   fi
-  green "    ✓ gh (authenticated)"
+}
 
-  # Bun/Node - fast check
-  if ! command -v bun &>/dev/null && ! command -v node &>/dev/null; then
-    if should_update; then
-      yellow "    Installing bun..."
-      brew install oven-sh/bun/bun
-    else
-      red "    ✗ bun/node required but missing"
-      exit 1
-    fi
-  fi
-  green "    ✓ bun/node"
-fi
-
-###############################################################################
-# Secrets: infisical
-###############################################################################
-if [ "$OPT_SECRETS" = "1" ]; then
-  blue "==> Checking Infisical..."
-
-  # Infisical - install only if missing (skip upgrade in fast mode)
-  if ! command -v infisical &>/dev/null; then
-    yellow "    Installing Infisical CLI..."
+load_secrets() {
+  if ! has infisical; then
     brew install infisical
-  elif should_update; then
-    brew upgrade infisical 2>/dev/null || true
-  fi
-  green "    ✓ infisical cli"
-
-  # Infisical init check (fast local check)
-  if [ ! -f "$DOTFILES_DIR/.infisical.json" ]; then
-    red "    ✗ .infisical.json not found — run: infisical init"
-    exit 1
+  elif can_update; then
+    brew upgrade infisical || true
   fi
 
-  # Pull secrets (this is required, network call)
+  [[ -f "$DOTFILES_DIR/.infisical.json" ]] || exit 1
+
   INFISICAL_API_URL="${INFISICAL_API_URL:-https://infisical-production-a65a.up.railway.app}" \
     infisical export --env="$INFISICAL_ENV" --format=dotenv-export > "$DOTFILES_DIR/.env"
-  green "    ✓ secrets pulled (env: $INFISICAL_ENV)"
 
-  # Source secrets
   set -a
   source "$DOTFILES_DIR/.env"
   set +a
-else
-  yellow "    ⚠ skipping secrets (--no-secrets)"
-fi
+}
 
-###############################################################################
-# Tools: dev tools
-###############################################################################
-if [ "$OPT_TOOLS" = "1" ]; then
-  blue "==> Checking tools..."
+install_vibeproxy() {
+  [[ ! -d "$VIBEPROXY_APP" ]] || return 0
+  can_update || return 0
 
-  # Claude - install only if missing, skip update check in fast mode
-  if ! command -v claude &>/dev/null; then
-    yellow "    Installing Claude Code..."
+  local url tmp
+  url="$(
+    curl -fsSL "https://api.github.com/repos/automazeio/vibeproxy/releases/latest" |
+      grep -m1 '"browser_download_url":.*\.dmg"' |
+      sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/'
+  )"
+  [[ -n "$url" ]] || return 0
+
+  tmp="$(mktemp /tmp/vibeproxy-XXXXXX.dmg)"
+  curl -fSL -o "$tmp" "$url" || return 0
+  hdiutil attach "$tmp" -quiet -nobrowse || return 0
+  cp -R "/Volumes/VibeProxy/VibeProxy.app" /Applications/ || true
+  hdiutil detach "/Volumes/VibeProxy" -quiet || true
+  rm -f "$tmp"
+}
+
+install_tools() {
+  if ! has claude; then
     curl -fsSL https://claude.ai/install.sh | bash
-  elif should_update; then
-    claude update 2>/dev/null || true
+  elif can_update; then
+    claude update || true
   fi
-  green "    ✓ claude code"
 
-  # Codex - fast check
-  if ! command -v codex &>/dev/null; then
-    if should_update; then
-      yellow "    Installing Codex..."
-      brew install --cask codex
-    else
-      yellow "    ⚠ codex not installed (skipped in fast mode)"
-    fi
+  if ! has codex && can_update; then
+    brew install --cask codex
+  fi
+
+  install_vibeproxy
+
+  if ! has shelf; then
+    bun install -g @rikalabs/shelf || npm install -g @rikalabs/shelf || true
+  fi
+
+  if ! has parallel-cli; then
+    curl -fsSL https://parallel.ai/install.sh | bash || true
+  fi
+
+  if ! has uvx; then
+    curl -LsSf https://astral.sh/uv/install.sh | sh || true
+  fi
+
+  if ! has ast-grep; then
+    brew install ast-grep || true
+  fi
+}
+
+sync_claude() {
+  mkdir -p "$HOME/.claude/skills" "$HOME/.claude/commands"
+  cp "$DOTFILES_DIR/claude/settings.json" "$HOME/.claude/"
+  cp "$DOTFILES_DIR"/claude/settings-*.json "$HOME/.claude/" 2>/dev/null || true
+  cp "$DOTFILES_DIR/AGENTS.md" "$HOME/.claude/CLAUDE.md"
+  cp -R "$DOTFILES_DIR"/claude/skills/* "$HOME/.claude/skills/" 2>/dev/null || true
+  cp "$DOTFILES_DIR"/claude/commands/*.md "$HOME/.claude/commands/" 2>/dev/null || true
+  cp -R "$DOTFILES_DIR"/claude/commands/autoresearch "$HOME/.claude/commands/" 2>/dev/null || true
+}
+
+sync_codex() {
+  mkdir -p "$HOME/.codex/skills"
+  cp "$DOTFILES_DIR/codex/config.toml" "$HOME/.codex/"
+  cp "$DOTFILES_DIR/AGENTS.md" "$HOME/.codex/"
+  cp -R "$DOTFILES_DIR"/codex/skills/* "$HOME/.codex/skills/" 2>/dev/null || true
+}
+
+sync_dotfiles() {
+  append_once "source \"$DOTFILES_DIR/shell/shared.zsh\"" "$HOME/.zshrc"
+
+  cp "$DOTFILES_DIR/git/gitconfig" "$HOME/.gitconfig"
+  sync_claude
+  sync_codex
+
+  mkdir -p "$HOME/.config/ghostty"
+  cp "$DOTFILES_DIR/ghostty/config" "$HOME/.config/ghostty/"
+}
+
+setup_mcp() {
+  if has claude; then
+    claude mcp add --transport http exa https://mcp.exa.ai/mcp --scope user || true
+    claude mcp add --transport http paper http://127.0.0.1:29979/mcp --scope user || true
+    claude mcp add --transport http gh_grep https://mcp.grep.app --scope user || true
+    claude mcp add --transport http context7 https://mcp.context7.com/mcp --scope user || true
+    claude mcp add --scope user ast-grep -- uvx --from git+https://github.com/ast-grep/ast-grep-mcp ast-grep-server || true
+  fi
+
+  if has codex; then
+    codex mcp add exa --url https://mcp.exa.ai/mcp || true
+    codex mcp add paper --url http://127.0.0.1:29979/mcp || true
+    codex mcp add gh_grep --url https://mcp.grep.app || true
+    codex mcp add context7 --url https://mcp.context7.com/mcp || true
+  fi
+}
+
+run_extras() {
+  can_update || return 0
+  [[ -d "$VIBEPROXY_APP" ]] && open -gj "$VIBEPROXY_APP" || true
+}
+
+write_environment() {
+  if enabled "$SECRETS"; then
+    launchctl setenv CLI_PROXY_API_KEY "${CLI_PROXY_API_KEY:-}" || true
+    launchctl setenv FIREWORKS_API_KEY "${FIREWORKS_API_KEY:-}" || true
+    cp "$DOTFILES_DIR/.env" "$HOME/.secrets.zsh"
   else
-    green "    ✓ codex"
+    : > "$HOME/.secrets.zsh"
   fi
+}
 
-  # Droid - fast check
-  if ! command -v droid &>/dev/null; then
-    if should_update; then
-      yellow "    Installing Droid..."
-      curl -fsSL https://factory.ai/install.sh | bash
-    else
-      yellow "    ⚠ droid not installed (skipped in fast mode)"
-    fi
-  else
-    green "    ✓ droid"
-  fi
-
-  # OpenCode - fast check
-  if ! command -v opencode &>/dev/null; then
-    if should_update; then
-      yellow "    Installing OpenCode..."
-      brew install sst/tap/opencode
-    else
-      yellow "    ⚠ opencode not installed (skipped in fast mode)"
-    fi
-  else
-    green "    ✓ opencode"
-  fi
-
-  # VibeProxy - check if exists, skip download in fast mode
-  if [ ! -d "$VIBEPROXY_APP" ]; then
-    if should_update; then
-      yellow "    Downloading VibeProxy..."
-      VIBEPROXY_URL="$(curl -fsSL "https://api.github.com/repos/automazeio/vibeproxy/releases/latest" 2>/dev/null \
-        | grep -m1 '"browser_download_url":.*\.dmg"' \
-        | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/')"
-      if [ -n "$VIBEPROXY_URL" ]; then
-        TMPFILE="$(mktemp /tmp/vibeproxy-XXXXXX.dmg)"
-        curl -fSL -o "$TMPFILE" "$VIBEPROXY_URL" 2>/dev/null || true
-        if [ -f "$TMPFILE" ]; then
-          hdiutil attach "$TMPFILE" -quiet -nobrowse 2>/dev/null || true
-          cp -R "/Volumes/VibeProxy/VibeProxy.app" /Applications/ 2>/dev/null || true
-          hdiutil detach "/Volumes/VibeProxy" -quiet 2>/dev/null || true
-          rm -f "$TMPFILE"
-        fi
-      fi
-    fi
-  fi
-  if [ -d "$VIBEPROXY_APP" ]; then
-    green "    ✓ vibeproxy"
-  else
-    yellow "    ⚠ vibeproxy not installed"
-  fi
-
-  # Shelf - fast check
-  if ! command -v shelf &>/dev/null; then
-    yellow "    Installing shelf..."
-    bun install -g @rikalabs/shelf 2>/dev/null || npm install -g @rikalabs/shelf 2>/dev/null || true
-  fi
-  green "    ✓ shelf"
-
-  # Parallel CLI - fast check
-  if ! command -v parallel-cli &>/dev/null; then
-    yellow "    Installing parallel-cli..."
-    curl -fsSL https://parallel.ai/install.sh | bash 2>/dev/null || true
-  fi
-  green "    ✓ parallel-cli"
-
-  # uv / uvx - prereq for ast-grep MCP and other python-based MCPs
-  if ! command -v uvx &>/dev/null; then
-    yellow "    Installing uv..."
-    curl -LsSf https://astral.sh/uv/install.sh | sh 2>/dev/null || true
-  fi
-  green "    ✓ uv/uvx"
-
-  # ast-grep - prereq for ast-grep MCP (runs as subprocess of the server)
-  if ! command -v ast-grep &>/dev/null; then
-    yellow "    Installing ast-grep..."
-    brew install ast-grep 2>/dev/null || true
-  fi
-  green "    ✓ ast-grep"
-fi
-
-###############################################################################
-# Dotfiles: config syncing
-###############################################################################
-if [ "$OPT_DOTFILES" = "1" ]; then
-  blue "==> Syncing dotfiles..."
-
-  # Shell config - fast
-  if ! grep -qF "devbox/shell/shared.zsh" ~/.zshrc 2>/dev/null; then
-    echo "" >> ~/.zshrc
-    echo "source \"$DOTFILES_DIR/shell/shared.zsh\"" >> ~/.zshrc
-  fi
-  green "    ✓ shell config"
-
-  # Configs - parallel copy where possible
-  (
-    cp "$DOTFILES_DIR/git/gitconfig" ~/.gitconfig
-  ) &
-  GIT_PID=$!
-
-  (
-    # Claude
-    mkdir -p ~/.claude ~/.claude/skills ~/.claude/commands
-    cp "$DOTFILES_DIR/claude/settings.json" ~/.claude/
-    cp "$DOTFILES_DIR/claude/settings-kimi.json" ~/.claude/ 2>/dev/null || true
-    cp "$DOTFILES_DIR/claude/settings-codex.json" ~/.claude/ 2>/dev/null || true
-    cp "$DOTFILES_DIR/claude/settings-glm.json" ~/.claude/ 2>/dev/null || true
-    cp "$DOTFILES_DIR/AGENTS.md" ~/.claude/CLAUDE.md
-    cp -R "$DOTFILES_DIR"/claude/skills/* ~/.claude/skills/ 2>/dev/null || true
-    cp "$DOTFILES_DIR"/claude/commands/*.md ~/.claude/commands/ 2>/dev/null || true
-    cp -R "$DOTFILES_DIR"/claude/commands/autoresearch ~/.claude/commands/ 2>/dev/null || true
-  ) &
-  CLAUDE_PID=$!
-
-  (
-    # Codex
-    mkdir -p ~/.codex ~/.codex/skills
-    cp "$DOTFILES_DIR/codex/config.toml" ~/.codex/
-    cp "$DOTFILES_DIR/AGENTS.md" ~/.codex/
-    cp -R "$DOTFILES_DIR"/codex/skills/* ~/.codex/skills/ 2>/dev/null || true
-  ) &
-  CODEX_PID=$!
-
-  (
-    # Droid
-    mkdir -p ~/.factory ~/.factory/droids ~/.factory/skills
-    cp "$DOTFILES_DIR/droid/settings.json" ~/.factory/
-    cp "$DOTFILES_DIR/droid/mcp.json" ~/.factory/
-    cp "$DOTFILES_DIR/AGENTS.md" ~/.factory/
-    cp "$DOTFILES_DIR"/droid/droids/*.md ~/.factory/droids/ 2>/dev/null || true
-    cp -r "$DOTFILES_DIR"/droid/skills/* ~/.factory/skills/ 2>/dev/null || true
-    rm -f ~/.factory/config.json ~/.factory/settings.local.json
-  ) &
-  DROID_PID=$!
-
-  (
-    # OpenCode
-    mkdir -p ~/.config/opencode/agents ~/.config/opencode/skills ~/.config/opencode/commands
-    # Clean old agents first
-    rm -f ~/.config/opencode/agents/smart.md ~/.config/opencode/agents/deep.md ~/.config/opencode/agents/librarian.md
-    rm -f ~/.config/opencode/agents/oracle.md ~/.config/opencode/agents/painter.md ~/.config/opencode/agents/reviewer.md
-    rm -f ~/.config/opencode/agents/rush.md
-    # Copy current configs
-    cp "$DOTFILES_DIR/opencode.json" ~/.config/opencode/
-    cp "$DOTFILES_DIR/AGENTS.md" ~/.config/opencode/
-    cp "$DOTFILES_DIR/tui.json" ~/.config/opencode/ 2>/dev/null || true
-    cp "$DOTFILES_DIR"/opencode/agents/*.md ~/.config/opencode/agents/ 2>/dev/null || true
-    cp "$DOTFILES_DIR"/opencode/commands/*.md ~/.config/opencode/commands/ 2>/dev/null || true
-    cp -r "$DOTFILES_DIR"/opencode/skills/* ~/.config/opencode/skills/ 2>/dev/null || true
-  ) &
-  OPENCODE_PID=$!
-
-  (
-    # Ghostty
-    mkdir -p ~/.config/ghostty
-    cp "$DOTFILES_DIR/ghostty/config" ~/.config/ghostty/
-  ) &
-  GHOSTTY_PID=$!
-
-  # Wait for all background jobs
-  wait $GIT_PID $CLAUDE_PID $CODEX_PID $DROID_PID $OPENCODE_PID $GHOSTTY_PID
-
-  green "    ✓ all configs synced"
-fi
-
-###############################################################################
-# MCP: integrations
-###############################################################################
-if [ "$OPT_MCP" = "1" ]; then
-  blue "==> Setting up MCP..."
-
-  # Only add MCPs if commands exist (quick check)
-  if command -v claude &>/dev/null; then
-    claude mcp add --transport http exa https://mcp.exa.ai/mcp --scope user 2>/dev/null || true
-    claude mcp add --transport http paper http://127.0.0.1:29979/mcp --scope user 2>/dev/null || true
-    claude mcp add --transport http gh_grep https://mcp.grep.app --scope user 2>/dev/null || true
-    claude mcp add --transport http context7 https://mcp.context7.com/mcp --scope user 2>/dev/null || true
-    claude mcp add --scope user ast-grep -- uvx --from git+https://github.com/ast-grep/ast-grep-mcp ast-grep-server 2>/dev/null || true
-    green "    ✓ claude mcp"
-  fi
-
-  if command -v codex &>/dev/null; then
-    codex mcp add exa --url https://mcp.exa.ai/mcp 2>/dev/null || true
-    codex mcp add paper --url http://127.0.0.1:29979/mcp 2>/dev/null || true
-    codex mcp add gh_grep --url https://mcp.grep.app 2>/dev/null || true
-    codex mcp add context7 --url https://mcp.context7.com/mcp 2>/dev/null || true
-    # ast-grep is stdio — provisioned via devbox/codex/config.toml file copy above
-    green "    ✓ codex mcp"
-  fi
-
-  if command -v droid &>/dev/null; then
-    droid mcp add exa https://mcp.exa.ai/mcp --type http 2>/dev/null || true
-    droid mcp add paper http://127.0.0.1:29979/mcp --type http 2>/dev/null || true
-    droid mcp add gh_grep https://mcp.grep.app --type http 2>/dev/null || true
-    droid mcp add context7 https://mcp.context7.com/mcp --type http 2>/dev/null || true
-    # ast-grep is stdio — provisioned via devbox/droid/mcp.json file copy above
-    green "    ✓ droid mcp"
-  fi
-fi
-
-###############################################################################
-# Extras: plugins
-###############################################################################
-if [ "$OPT_EXTRAS" = "1" ]; then
-  blue "==> Setting up extras..."
-
-  if should_update; then
-    # Droid plugin
-    if command -v droid &>/dev/null; then
-      droid plugin marketplace add https://github.com/parallel-web/parallel-agent-skills 2>/dev/null || true
-      droid plugin install parallel@parallel-agent-skills 2>/dev/null || true
-      green "    ✓ droid plugin"
-    fi
-
-    # OpenCode plugin (quick check)
-    if command -v bunx &>/dev/null; then
-      bunx @0xsero/open-queue 2>/dev/null || true
-    elif command -v npx &>/dev/null; then
-      npx @0xsero/open-queue 2>/dev/null || true
-    fi
-    green "    ✓ opencode plugin"
-
-    # VibeProxy launch
-    if [ -d "$VIBEPROXY_APP" ]; then
-      open -gj "$VIBEPROXY_APP" 2>/dev/null || true
-      green "    ✓ vibeproxy launched"
-    fi
-  else
-    yellow "    ⚠ plugins skipped (fast mode)"
-  fi
-fi
-
-###############################################################################
-# Environment: set env vars (always runs)
-###############################################################################
-blue "==> Setting environment..."
-
-# System env vars (only set if secrets were loaded)
-if [ "$OPT_SECRETS" = "1" ]; then
-  launchctl setenv CLI_PROXY_API_KEY "${CLI_PROXY_API_KEY}" 2>/dev/null || true
-  launchctl setenv FIREWORKS_API_KEY "${FIREWORKS_API_KEY}" 2>/dev/null || true
-fi
-launchctl setenv OPENCODE_MESSAGE_QUEUE_MODE hold 2>/dev/null || true
-launchctl setenv OPENCODE_EXPERIMENTAL_PLAN_MODE true 2>/dev/null || true
-
-export OPENCODE_MESSAGE_QUEUE_MODE=hold
-export OPENCODE_EXPERIMENTAL_PLAN_MODE=true
-
-# Write secrets file (only include infisical vars if loaded)
-if [ "$OPT_SECRETS" = "1" ]; then
-  cat > ~/.secrets.zsh <<SECRETS
-$(cat "$DOTFILES_DIR/.env")
-export OPENCODE_MESSAGE_QUEUE_MODE="\${OPENCODE_MESSAGE_QUEUE_MODE:-hold}"
-export OPENCODE_EXPERIMENTAL_PLAN_MODE="\${OPENCODE_EXPERIMENTAL_PLAN_MODE:-true}"
-SECRETS
-else
-  cat > ~/.secrets.zsh <<SECRETS
-export OPENCODE_MESSAGE_QUEUE_MODE="\${OPENCODE_MESSAGE_QUEUE_MODE:-hold}"
-export OPENCODE_EXPERIMENTAL_PLAN_MODE="\${OPENCODE_EXPERIMENTAL_PLAN_MODE:-true}"
-SECRETS
-fi
-
-green "    ✓ environment set"
-
-###############################################################################
-# Summary
-###############################################################################
-echo ""
-green "==> Done!"
-
-if [[ "$OPT_FAST" == "1" ]]; then
-  echo ""
-  yellow "  Fast mode: skipped all updates"
-  yellow "  Run 'bash sync.sh' for full update"
-fi
-
-echo ""
-yellow "  Next steps:"
-yellow "    source ~/.zshrc  # reload shell"
+enabled "$SYSTEMS" && install_systems
+enabled "$SECRETS" && load_secrets
+enabled "$TOOLS" && install_tools
+enabled "$DOTFILES" && sync_dotfiles
+enabled "$MCP" && setup_mcp
+enabled "$EXTRAS" && run_extras
+write_environment

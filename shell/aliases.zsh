@@ -8,5 +8,4 @@ alias cck='claude --dangerously-skip-permissions --settings ~/.claude/settings-k
 alias ccx='claude --dangerously-skip-permissions --settings ~/.claude/settings-codex.json'
 alias ccg='claude --dangerously-skip-permissions --settings ~/.claude/settings-glm.json'
 alias cdx='codex --yolo'
-alias op='opencode'
 alias pp='parallel-cli'
