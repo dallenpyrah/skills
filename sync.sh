@@ -172,7 +172,7 @@ sync_claude() {
   cp "$DOTFILES_DIR/claude/settings.json" "$HOME/.claude/"
   cp "$DOTFILES_DIR"/claude/settings-*.json "$HOME/.claude/" 2>/dev/null || true
   cp "$DOTFILES_DIR/AGENTS.md" "$HOME/.claude/CLAUDE.md"
-  cp -R "$DOTFILES_DIR"/claude/skills/* "$HOME/.claude/skills/" 2>/dev/null || true
+  cp -R "$DOTFILES_DIR"/skills/* "$HOME/.claude/skills/" 2>/dev/null || true
   cp "$DOTFILES_DIR"/claude/commands/*.md "$HOME/.claude/commands/" 2>/dev/null || true
   cp -R "$DOTFILES_DIR"/claude/commands/autoresearch "$HOME/.claude/commands/" 2>/dev/null || true
 }
@@ -181,7 +181,7 @@ sync_codex() {
   mkdir -p "$HOME/.codex/skills"
   cp "$DOTFILES_DIR/codex/config.toml" "$HOME/.codex/"
   cp "$DOTFILES_DIR/AGENTS.md" "$HOME/.codex/"
-  cp -R "$DOTFILES_DIR"/codex/skills/* "$HOME/.codex/skills/" 2>/dev/null || true
+  cp -R "$DOTFILES_DIR"/skills/* "$HOME/.codex/skills/" 2>/dev/null || true
 }
 
 sync_dotfiles() {
