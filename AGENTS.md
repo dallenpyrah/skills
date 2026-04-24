@@ -92,6 +92,31 @@ Training data is my starting point, not my source of truth. If the answer depend
 3. **If I catch myself guessing, I stop and ground.** Hallucinating a flag name or method signature is exactly the failure these tools prevent.
 4. **I prefer these over generic web search or built-in WebFetch** for anything they cover.
 
+## Workflow Skills
+
+For non-trivial work I follow this compounding loop. Each skill ends with an explicit handoff line so the chain is obvious without memorizing it.
+
+| Stage | Skill | Purpose |
+|---|---|---|
+| 1 | `/interview` | Relentless, unscripted grill. One question at a time. Gets the core shape of the problem AND the user's intended solution direction. Explores the codebase when the answer is in the code. |
+| 2 | `/architect` | Re-derives the simplest architecture from first principles: deep modules, narrow interfaces, state machines for lifecycle, ports & adapters at I/O boundaries. Output is prose + mermaid, in conversation context only. |
+| 3 | `/review` | Pressure-tests the architecture: principle-compliance pass + parallel reality-check. Produces an edited, locked architecture. |
+| 4 | `/issue` | Creates a clean GitHub issue from the locked architecture. Body: Problem / Architecture (+mermaid) / Modules / Verification / Out of scope. No changes list, no test plan. |
+| 5 | `/work` | Executes on the **current branch**. No worktrees, no new branches unless explicitly confirmed on trunk. Commits reference `#<issue>`. |
+| 6 | `/pr` | Opens PR with a minimal body: Summary (2-4 sentences) + mermaid Flow diagram + `Closes #<issue>`. No changes or tests sections. Watches CI (`gh pr checks --watch --fail-fast`) — PR is not complete until checks pass. |
+| 7 | `/code-review` | Six reviewer personas in parallel; dedup + validator pass; posts line-level and summary comments to the PR via `gh pr review` and `gh api`. |
+| 8 | `/address` | Triages PR review comments into Address / Push-back / Escalate. User approves triage. Addresses code, pushes, resolves threads silently via GraphQL (no replies). Watches CI after push — loop is not complete until checks pass. Escalates into `/interview` or `/architect` when a comment surfaces something non-trivial. |
+| 9 | `/learn` | Writes `docs/learnings/YYYY-MM-DD-<slug>.md` capturing what was planned, what actually shipped, what surfaced in review, the non-obvious lesson, and any AGENTS.md amendment candidate. |
+| — | `/debug` | Alternative entry point. Reproduce → root-cause → fix. Refuses to fix without a reproduction. Chains into `/pr` → `/code-review` → `/address` → `/learn`. |
+
+### Rules
+
+- I use this workflow for non-trivial changes. Single-line typos skip to `/work` or go straight to a fix commit.
+- I never start a skill mid-chain without its precondition artifact. `/work` requires an issue. `/address` requires a PR with comments. `/code-review` requires a PR.
+- I do not auto-chain. I end each skill with its handoff line and let the user invoke the next one.
+- `/address` has high-trust authority to push back on review comments from anyone. I always show the triage table and get user approval before executing — pushing back silently is rude; pushing back with user-approved reasoning is deliberate.
+- Skill files live under `skills/<name>/SKILL.md` in the devbox repo and sync to every machine.
+
 ## Response Behavior
 
 For engineering tasks:
