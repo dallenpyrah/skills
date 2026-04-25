@@ -3,13 +3,15 @@
  * devbox sync — installs tools and applies dotfiles.
  *
  * Scope:
- *  - systems: brew, gh, bun
- *  - tools:   claude, codex, shelf, parallel-cli, uvx, ast-grep
- *  - dotfiles: shell, git, claude (+skills, +commands, +MCP), codex (+skills), ghostty
+ *  - systems: brew, gh, bun, node
+ *  - tools:   claude, codex, pi, shelf, parallel-cli, uvx, ast-grep
+ *  - dotfiles: shell, git, claude (+skills, +commands, +MCP), codex (+skills),
+ *              pi (+skills, +MCP), ghostty
  *
  * MCP servers are declarative:
  *  - claude/mcp-servers.json is merged into ~/.claude.json (top-level mcpServers)
  *  - codex/config.toml ships mcp_servers.* inline; sync copies the whole file
+ *  - pi/mcp.json is read by pi-mcp-adapter from ~/.pi/agent/mcp.json
  *
  * Usage:
  *   devbox-sync                  # all steps
@@ -103,6 +105,9 @@ const installSystems = Effect.gen(function* () {
 
   if (!(yield* has("gh"))) yield* exec("brew", ["install", "gh"]);
   if (!(yield* has("bun"))) yield* exec("brew", ["install", "oven-sh/bun/bun"]);
+  // System node so subprocesses (e.g. pi spawning npm for `pi install ...`) can resolve npm.
+  // nvm still wins in interactive shells; brew node is the spawn-context fallback.
+  if (!(yield* has("node"))) yield* exec("brew", ["install", "node"]);
 
   yield* exec("gh", ["auth", "status"]);
 });
@@ -117,6 +122,8 @@ const installTools = Effect.gen(function* () {
   }
 
   if (!(yield* has("codex"))) yield* tryExec("brew", ["install", "--cask", "codex"]);
+  if (!(yield* has("pi"))) yield* tryExec("npm", ["install", "-g", "@mariozechner/pi-coding-agent"]);
+  yield* tryExec("pi", ["install", "npm:pi-mcp-adapter"]);
   if (!(yield* has("shelf"))) yield* tryExec("bun", ["install", "-g", "@rikalabs/shelf"]);
   if (!(yield* has("parallel-cli"))) {
     yield* trySh("curl -fsSL https://parallel.ai/install.sh | bash");
@@ -153,6 +160,12 @@ const syncDotfiles = Effect.gen(function* () {
   yield* cp(join(DOTFILES, "codex/config.toml"), join(HOME, ".codex/config.toml"));
   yield* cp(join(DOTFILES, "AGENTS.md"), join(HOME, ".codex/AGENTS.md"));
   yield* cpTree(join(DOTFILES, "skills"), join(HOME, ".codex/skills"));
+
+  // pi: AGENTS + skills (under a package dir per pi convention) + MCP config
+  yield* ensureDir(join(HOME, ".pi/agent"));
+  yield* cp(join(DOTFILES, "AGENTS.md"), join(HOME, ".pi/agent/AGENTS.md"));
+  yield* cpTree(join(DOTFILES, "skills"), join(HOME, ".pi/agent/skills/compound"));
+  yield* cp(join(DOTFILES, "pi/mcp.json"), join(HOME, ".pi/agent/mcp.json"));
 
   // ghostty
   yield* cp(join(DOTFILES, "ghostty/config"), join(HOME, ".config/ghostty/config"));
