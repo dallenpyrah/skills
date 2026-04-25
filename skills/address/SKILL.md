@@ -1,11 +1,11 @@
 ---
 name: address
-description: Work through review comments on the current PR. Triages each comment as Address / Push-back / Escalate. User approves the triage. Addressed comments produce code changes, commits, and silent thread resolution via GraphQL (no reply text). Pushed-back comments stay unresolved. Escalations invoke /interview or /architect inline. Watches GitHub Actions after push — the loop is not complete until all checks pass.
+description: Work through review comments on the current PR. Triages each comment as Address / Push-back / Escalate and executes immediately — no approval gate. Addressed comments produce code changes, commits, and silent thread resolution via GraphQL (no reply text). Pushed-back comments stay unresolved. Escalations invoke /interview or /architect inline. Watches GitHub Actions after push — the loop is not complete until all checks pass.
 ---
 
 # /address
 
-Work through pull-request review comments. You are empowered to push back on any comment — from `/code-review`, from humans, from anyone — when it conflicts with the locked architecture or AGENTS.md principles. High-trust skill: the user approves the triage before any code changes.
+Work through pull-request review comments. You are empowered to push back on any comment — from `/code-review`, from humans, from anyone — when it conflicts with the locked architecture or AGENTS.md principles. **Autonomous: decide the triage, print it for transparency, execute immediately.** No approval gate.
 
 ## Preconditions
 
@@ -53,7 +53,7 @@ gh api "repos/${REPO}/issues/${PR}/comments"
 
 Build one working list: `[{thread_id, reviewer, file, line, body, url, is_resolved}]`. Skip threads where `isResolved = true`.
 
-## Phase B — Triage (user-approved)
+## Phase B — Triage (autonomous)
 
 For each unresolved comment, decide one of:
 
@@ -71,9 +71,9 @@ Present the triage to the user as a table:
 ...
 ```
 
-**Stop and get user approval before executing.** "Push back" is a deliberate social signal — the user must confirm the reasoning.
+Print the table, then proceed straight to Phase C / D. **Do not stop for approval.** The user can interrupt if they disagree — silence is consent.
 
-If the user changes any verdict, update the table. Loop until the user says proceed.
+For every Push-back row, the one-line reason must cite the specific principle / architecture decision / AGENTS.md rule the comment conflicts with. Pushback is a public, durable signal; it has to be defensible without you in the room.
 
 ## Phase C — Escalate
 
@@ -85,7 +85,7 @@ For any comment marked Escalate, handle inline before executing the others:
 The output of an escalation may change the locked architecture. If it does:
 1. Update the linked issue body via `gh issue edit`.
 2. Re-triage all comments in light of the new architecture — some previously-Address comments may become Push-back, and vice versa.
-3. Get user approval on the updated triage before proceeding.
+3. Print the updated triage table and continue executing. No approval gate.
 
 ## Phase D — Execute (for Address comments)
 
@@ -162,7 +162,8 @@ On success (all checks green or no checks configured), end with exactly this lin
 ## Rules
 
 - **Never post reply text.** The only communication channels this skill uses are: (a) commits that address the comment, (b) silent thread resolution, (c) unresolved threads as pushback signal.
-- **User approves the triage.** Non-negotiable. Pushing back without user approval would be rude and risky.
-- **Escalation can invert the triage.** If escalation changes the architecture, previously-Address comments may become Push-back — always re-approve.
+- **Autonomous triage.** Decide, print the table for transparency, execute. No approval gate. The user can interrupt; silence is consent.
+- **Pushback must cite a principle.** Every Push-back row's one-line reason names the specific rule it invokes (locked architecture, AGENTS.md principle, issue scope). Without a citable reason, the verdict becomes Address.
+- **Escalation can invert the triage.** If escalation changes the architecture, previously-Address comments may become Push-back — re-print the updated table and keep executing.
 - **One commit per addressed comment.** Makes it obvious which change answers which finding.
 - **Grounding rules apply.** If a reviewer's suggestion references an API, verify it against docs before accepting the suggestion as valid.
