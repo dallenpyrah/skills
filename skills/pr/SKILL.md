@@ -21,31 +21,48 @@ Open a pull request with a minimal, opinionated body.
    - Otherwise, scan recent commit bodies (`git log -20 --format=%B`) for `Refs #<n>`. Use the most common match.
    - If still not found, ask the user for the issue number.
 
-2. Fetch the issue title: `gh issue view <n> --json title -q .title`. Use this as the PR title.
+2. Fetch the issue title and labels: `gh issue view <n> --json title,labels`. Use them as input, not as the PR title directly.
 
-3. Build the PR body using the template in `REFERENCE.md`:
+3. Build a PR title that satisfies Orika's required `pr-title` / `commitlint` rules:
+   - Format: `type(scope): subject` or `type: subject`.
+   - Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
+   - Subject must be lowercase.
+   - Subject must be at most 72 characters.
+   - Prefer the issue title's existing Conventional Commit title if it already passes.
+   - Otherwise infer the type from the issue labels, issue title, or shipped change; default to `fix` only for bug repairs and `feat` only for user-visible behavior, otherwise use `chore`.
+   - Do not include `#<issue>` in the title; the body owns `Closes #<n>`.
+
+4. Validate the title before creating the PR. If the repository has commitlint installed, run it against the title from the repo root:
+
+```bash
+printf '%s\n' "$PR_TITLE" | bunx commitlint
+```
+
+If validation fails, fix the title and rerun validation. Do not open a PR with a title that fails `commitlint`.
+
+5. Build the PR body using the template in `REFERENCE.md`:
    - `## Summary` — 2-4 sentences. What and why. Written against the issue's problem statement.
    - `## Flow` — a mermaid `flowchart` or `sequenceDiagram` showing the runtime or user flow introduced by this PR. Required.
    - Final line: `Closes #<n>`.
    - **Nothing else.** No changes section, no test plan, no screenshots block, no rollout plan.
 
-4. Write the body to a temp file (mermaid needs file-based --body-file, not inline).
+6. Write the body to a temp file (mermaid needs file-based --body-file, not inline).
 
-5. Push the branch:
+7. Push the branch:
 
 ```bash
 git push -u origin "$(git branch --show-current)"
 ```
 
-6. Open the PR:
+8. Open the PR:
 
 ```bash
-gh pr create --title "<title>" --body-file "<tmpfile>"
+gh pr create --title "$PR_TITLE" --body-file "<tmpfile>"
 ```
 
-7. Capture the PR URL. Delete the temp file.
+9. Capture the PR URL. Delete the temp file.
 
-8. **Wait for GitHub Actions.** Do not hand off until checks terminate. The PR is not complete until all checks pass.
+10. **Wait for GitHub Actions.** Do not hand off until checks terminate. The PR is not complete until all checks pass.
 
 ```bash
 gh pr checks "<pr-number>" --watch --fail-fast

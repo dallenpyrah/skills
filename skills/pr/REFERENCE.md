@@ -1,5 +1,30 @@
 # /pr — Reference
 
+## PR title rules
+
+The PR title must pass the repository's `pr-title` check, which uses `commitlint` rules in Orika.
+
+Required shape:
+
+```text
+type(scope): subject
+# or
+type: subject
+```
+
+Rules:
+
+- Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
+- Subject is lowercase.
+- Subject is at most 72 characters.
+- No `#<issue>` suffix in the title.
+
+Validate before `gh pr create` when commitlint is available:
+
+```bash
+printf '%s\n' "$PR_TITLE" | bunx commitlint
+```
+
 ## PR body template
 
 Use this exact structure. Three elements. No others.
@@ -52,7 +77,10 @@ Closes #<n>
 EOF
 
 git push -u origin "$(git branch --show-current)"
-gh pr create --title "<title>" --body-file "$BODY_FILE"
+PR_TITLE="feat: add focused command palette search"
+printf '%s\n' "$PR_TITLE" | bunx commitlint
+
+gh pr create --title "$PR_TITLE" --body-file "$BODY_FILE"
 rm "$BODY_FILE"
 ```
 
