@@ -2,7 +2,7 @@
 
 ## PR title rules
 
-The PR title must pass the repository's `pr-title` check, which uses `commitlint` rules in Orika.
+The PR title must pass the current repository's `pr-title` check. If the repo has `commitlint`, validate with the repo's config before creating or updating the PR.
 
 Required shape:
 
@@ -58,9 +58,28 @@ Closes #<issue>
 - Call out breaking behavior or data migrations in one sentence if they exist.
 - No marketing language. No "This PR introduces a new …" filler.
 
+## Dirty repo rule
+
+`/pr` must work when unrelated files are dirty.
+
+- Create a branch automatically when currently on `main`, `master`, or `trunk`.
+- Do not stash before branching; Git carries the working tree to the new branch.
+- Commit only PR-relevant files.
+- Use explicit pathspecs: `git add -- <path>...`.
+- Never use `git add -A`, `git add .`, or `git commit -a` when unrelated changes may exist.
+- Leave unrelated dirty files unstaged.
+
 ## Heredoc invocation pattern
 
 ```bash
+START_BRANCH="$(git branch --show-current)"
+case "$START_BRANCH" in
+  main|master|trunk) git switch -c "fix/short-task-title" ;;
+esac
+
+git add -- skills/pr/SKILL.md skills/pr/REFERENCE.md
+git commit -m "fix(pr): handle dirty worktrees"
+
 BODY_FILE="$(mktemp -t pr-body-XXXXXX.md)"
 cat > "$BODY_FILE" <<'EOF'
 ## Summary
@@ -77,10 +96,14 @@ Closes #<n>
 EOF
 
 git push -u origin "$(git branch --show-current)"
-PR_TITLE="feat: add focused command palette search"
+PR_TITLE="fix(pr): handle dirty worktrees"
 printf '%s\n' "$PR_TITLE" | bunx commitlint
 
-gh pr create --title "$PR_TITLE" --body-file "$BODY_FILE"
+if gh pr view --json number,url >/tmp/current-pr.json 2>/dev/null; then
+  gh pr edit --title "$PR_TITLE" --body-file "$BODY_FILE"
+else
+  gh pr create --title "$PR_TITLE" --body-file "$BODY_FILE"
+fi
 rm "$BODY_FILE"
 ```
 

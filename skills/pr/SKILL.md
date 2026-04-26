@@ -1,6 +1,6 @@
 ---
 name: pr
-description: Open a pull request with a strict minimal body — Summary (2-4 sentences) plus a mermaid Flow diagram plus `Closes #<issue>`. No changes list, no tests section, no breaking-changes section. Pushes the current branch, refuses to run on main/master/trunk. Watches GitHub Actions until they terminate — the PR is not complete until all checks pass. Hands off to /code-review.
+description: Open a pull request with a strict minimal body — Summary (2-4 sentences) plus a mermaid Flow diagram plus `Closes #<issue>`. No changes list, no tests section, no breaking-changes section. Works in dirty repos by committing only PR-relevant changes, creates a branch from trunk without asking, pushes the branch, watches GitHub Actions until they terminate, then hands off to /code-review.
 ---
 
 # /pr
@@ -9,21 +9,37 @@ Open a pull request with a minimal, opinionated body.
 
 ## Preconditions
 
-1. **Working tree clean.** `git status --porcelain` must be empty. If not, tell the user to commit or stash and stop.
-2. **Not on trunk.** If the current branch is `main`, `master`, or `trunk`, refuse — PRs must come from a non-trunk branch.
-3. **Upstream branch or remote exists.** `git remote get-url origin` must succeed.
-4. **`gh` authenticated.**
+1. **Remote exists.** `git remote get-url origin` must succeed.
+2. **`gh` authenticated.** `gh auth status` must succeed.
+3. **No unresolved conflicts.** If `git diff --name-only --diff-filter=U` prints anything, stop and tell the user to resolve conflicts first.
+4. **Dirty repos are allowed.** Do not require a clean working tree. Preserve unrelated changes by staging and committing only files that belong to this PR.
 
 ## Process
 
-1. Find the linked issue number. Options, in order:
+1. Capture the starting branch and working tree state:
+
+```bash
+START_BRANCH="$(git branch --show-current)"
+git status --short
+```
+
+2. If `START_BRANCH` is `main`, `master`, or `trunk`, create a PR branch without asking. Derive the name from the issue number when known, otherwise from the task title or timestamp:
+
+```bash
+git switch -c "<type>/<short-kebab-task>"
+```
+
+Do not stash first; the working tree moves with the new branch. This keeps unrelated dirty files present but uncommitted.
+
+3. Find the linked issue number. Options, in order:
    - If the user passed an explicit `--issue <n>` or `<n>` argument, use it.
-   - Otherwise, scan recent commit bodies (`git log -20 --format=%B`) for `Refs #<n>`. Use the most common match.
+   - Otherwise, scan recent commit bodies (`git log -20 --format=%B`) for `Refs #<n>`, `Fixes #<n>`, or `Closes #<n>`. Use the most common match.
+   - Otherwise, scan the current branch name for an issue number.
    - If still not found, ask the user for the issue number.
 
-2. Fetch the issue title and labels: `gh issue view <n> --json title,labels`. Use them as input, not as the PR title directly.
+4. Fetch the issue title and labels: `gh issue view <n> --json title,labels`. Use them as input, not as the PR title directly.
 
-3. Build a PR title that satisfies Orika's required `pr-title` / `commitlint` rules:
+5. Build a PR title that satisfies the repository's `pr-title` / `commitlint` rules:
    - Format: `type(scope): subject` or `type: subject`.
    - Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
    - Subject must be lowercase.
@@ -32,7 +48,7 @@ Open a pull request with a minimal, opinionated body.
    - Otherwise infer the type from the issue labels, issue title, or shipped change; default to `fix` only for bug repairs and `feat` only for user-visible behavior, otherwise use `chore`.
    - Do not include `#<issue>` in the title; the body owns `Closes #<n>`.
 
-4. Validate the title before creating the PR. If the repository has commitlint installed, run it against the title from the repo root:
+6. Validate the title before creating the PR. If the repository has commitlint installed, run it against the title from the repo root:
 
 ```bash
 printf '%s\n' "$PR_TITLE" | bunx commitlint
@@ -40,29 +56,51 @@ printf '%s\n' "$PR_TITLE" | bunx commitlint
 
 If validation fails, fix the title and rerun validation. Do not open a PR with a title that fails `commitlint`.
 
-5. Build the PR body using the template in `REFERENCE.md`:
+7. Commit only the PR-relevant changes if needed:
+   - Inspect `git status --short` and `git diff --stat`.
+   - Decide which paths belong to this PR from the user request, issue, and changes you made.
+   - Stage only those paths with explicit pathspecs: `git add -- <path>...`.
+   - Never use `git add -A`, `git add .`, or `git commit -a` in a dirty repo.
+   - Leave unrelated modified/untracked files unstaged.
+   - If there are staged PR-relevant changes, commit them with a Conventional Commit message that references the issue when available, e.g. `fix(pr): handle dirty worktrees\n\nRefs #<n>`.
+   - If there are no staged changes but the branch already has commits to push, continue.
+   - If there are no staged changes and no branch commits, stop: there is nothing to open.
+
+8. Build the PR body using the template in `REFERENCE.md`:
    - `## Summary` — 2-4 sentences. What and why. Written against the issue's problem statement.
    - `## Flow` — a mermaid `flowchart` or `sequenceDiagram` showing the runtime or user flow introduced by this PR. Required.
    - Final line: `Closes #<n>`.
    - **Nothing else.** No changes section, no test plan, no screenshots block, no rollout plan.
 
-6. Write the body to a temp file (mermaid needs file-based --body-file, not inline).
+9. Write the body to a temp file (mermaid needs file-based --body-file, not inline).
 
-7. Push the branch:
+10. Push the branch:
 
 ```bash
 git push -u origin "$(git branch --show-current)"
 ```
 
-8. Open the PR:
+11. Open the PR, or update the existing PR for this branch if one already exists:
+
+```bash
+if gh pr view --json number,url >/tmp/current-pr.json 2>/dev/null; then
+  gh pr edit --title "$PR_TITLE" --body-file "<tmpfile>"
+else
+  gh pr create --title "$PR_TITLE" --body-file "<tmpfile>"
+fi
+```
+
+Do not create duplicate PRs for the same branch.
+
+Fallback create command:
 
 ```bash
 gh pr create --title "$PR_TITLE" --body-file "<tmpfile>"
 ```
 
-9. Capture the PR URL. Delete the temp file.
+12. Capture the PR URL. Delete the temp file.
 
-10. **Wait for GitHub Actions.** Do not hand off until checks terminate. The PR is not complete until all checks pass.
+13. **Wait for GitHub Actions.** Do not hand off until checks terminate. The PR is not complete until all checks pass.
 
 ```bash
 gh pr checks "<pr-number>" --watch --fail-fast
