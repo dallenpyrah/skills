@@ -4,7 +4,7 @@
  *
  * Scope:
  *  - systems: brew, gh, bun, node
- *  - tools:   claude, codex, pi, shelf, parallel-cli, uvx, ast-grep
+ *  - tools:   claude, codex, pi, cua-driver, shelf, parallel-cli, uvx, ast-grep
  *  - dotfiles: shell, git, claude (+skills, +commands, +MCP), codex (+skills),
  *              pi (+skills, +MCP), ghostty
  *
@@ -32,6 +32,9 @@ const DOTFILES = import.meta.dir;
 const has = (cmd: string): Effect.Effect<boolean> =>
   Effect.sync(() => Bun.which(cmd) !== null);
 
+const exists = (path: string): Effect.Effect<boolean> =>
+  Effect.sync(() => fs.existsSync(path));
+
 const exec = (
   cmd: string,
   args: ReadonlyArray<string> = [],
@@ -56,6 +59,7 @@ const tryExec = (cmd: string, args: ReadonlyArray<string> = []) =>
   exec(cmd, args).pipe(Effect.catchAll(() => Effect.void));
 
 const sh = (script: string) => exec("/bin/bash", ["-c", script]);
+const shInherit = (script: string) => exec("/bin/bash", ["-c", script], { inherit: true });
 const trySh = (script: string) => tryExec("/bin/bash", ["-c", script]);
 
 const ensureDir = (path: string) =>
@@ -124,6 +128,21 @@ const installTools = Effect.gen(function* () {
   if (!(yield* has("codex"))) yield* tryExec("brew", ["install", "--cask", "codex"]);
   if (!(yield* has("pi"))) yield* tryExec("npm", ["install", "-g", "@mariozechner/pi-coding-agent"]);
   yield* tryExec("pi", ["install", "npm:pi-mcp-adapter"]);
+  if (!(yield* exists("/Applications/CuaDriver.app/Contents/MacOS/cua-driver"))) {
+    yield* shInherit(`
+      set -euo pipefail
+      install_url="https://raw.githubusercontent.com/trycua/cua/main/libs/cua-driver/scripts/install.sh"
+      if command -v gh >/dev/null 2>&1; then
+        version="$(gh api 'repos/trycua/cua/releases?per_page=40' --jq 'map(select(.tag_name | startswith("cua-driver-v"))) | .[0].tag_name | sub("^cua-driver-v"; "")')"
+        CUA_DRIVER_VERSION="$version" /bin/bash -c "$(curl -fsSL "$install_url")"
+      else
+        /bin/bash -c "$(curl -fsSL "$install_url")"
+      fi
+    `);
+  }
+  if (!(yield* has("cua-driver"))) {
+    yield* sh('mkdir -p "$HOME/.local/bin" && ln -sf /Applications/CuaDriver.app/Contents/MacOS/cua-driver "$HOME/.local/bin/cua-driver"');
+  }
   if (!(yield* has("shelf"))) yield* tryExec("bun", ["install", "-g", "@rikalabs/shelf"]);
   if (!(yield* has("parallel-cli"))) {
     yield* trySh("curl -fsSL https://parallel.ai/install.sh | bash");

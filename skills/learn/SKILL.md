@@ -1,16 +1,18 @@
 ---
 name: learn
-description: Capture the post-mortem for a compound-engineering cycle. Reads the issue, PR, review comments (addressed + pushed-back), and git log. Writes docs/learnings/YYYY-MM-DD-slug.md covering what was planned, what actually ended up working, what surfaced in review, the non-obvious lesson, reproducible patterns, and any AGENTS.md amendment candidate.
+description: Capture the post-mortem for a compound-engineering cycle. Reads the issue, PR, review comments (addressed + pushed-back), and git log. Writes docs/learnings/YYYY-MM-DD-slug.md, commits it, pushes the branch, and hands off to /merge when the PR is still open.
 ---
 
 # /learn
 
-Close the compound-engineering loop. Capture what was planned, what actually shipped, and what the cycle taught.
+Close the learning loop. Capture what was planned, what actually shipped, what the cycle taught, then commit and push the learning file.
 
 ## Preconditions
 
-- A PR exists (ideally merged; draft or open is acceptable if the user explicitly wants to capture mid-flight learnings).
+- A PR exists and normally remains open; merged PRs are acceptable only for historical capture.
 - The PR has a linked issue (via `Closes #<n>` in the body).
+- The working tree is clean before writing the learning file. If `git status --porcelain` is non-empty, stop and ask the user to commit or stash unrelated changes.
+- The current branch has a remote upstream or `origin` exists.
 - `gh` authenticated.
 
 ## Phase 1 — Gather context
@@ -78,11 +80,27 @@ pr: <pr url>
 This is a proposal. Review and edit AGENTS.md yourself if you want to adopt it — `/learn` never auto-edits AGENTS.md.
 ```
 
+## Phase 4 — Commit and push
+
+After writing the file:
+
+1. Stage only the learning file: `git add -- docs/learnings/YYYY-MM-DD-<slug>.md`.
+2. Commit it: `git commit -m "docs: capture learning for #<issue>"`.
+3. Push the current branch: `git push` if an upstream exists, otherwise `git push -u origin "$(git branch --show-current)"`.
+
+Do not include unrelated files in the commit. If the commit or push fails, surface the exact error and stop.
+
 ## Output
 
-Print the path to the written file. Then end with exactly this line and stop:
+Print the path to the written file and the pushed commit SHA. Then:
 
-> Cycle captured at <path>. Loop complete.
+- If the PR is open, end with exactly this line and stop:
+
+> Cycle captured at <path> in <sha>. Run `/merge` to merge the PR and clean up the branch.
+
+- If the PR is already merged or closed, end with exactly this line and stop:
+
+> Cycle captured at <path> in <sha>. Loop complete.
 
 ## Rules
 
@@ -90,3 +108,5 @@ Print the path to the written file. Then end with exactly this line and stop:
 - Do not auto-apply AGENTS.md amendments. The candidate is a proposal only.
 - If the PR is not yet merged, prefix the `type` frontmatter value with `in-flight-` (e.g., `in-flight-feature`). This flags the learning as tentative — the real outcome isn't locked yet.
 - Do not create a learning file if the issue/PR carries no non-obvious content. If all three agents return "nothing surprising, everything went as architected," say that and stop without writing the file — tell the user there's nothing durable to capture here.
+- Never commit if no learning file was written.
+- Never commit unrelated working tree changes.

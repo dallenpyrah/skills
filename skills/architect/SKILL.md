@@ -1,6 +1,6 @@
 ---
 name: architect
-description: Re-derive the simplest, cleanest architecture for the problem from first principles. Deep modules, narrow interfaces, state machines for lifecycle, ports & adapters for I/O, Effect-first for effectful paths. Runs after /interview has established the core shape of the problem and the user's solution direction. Produces an architecture proposal in conversation context — no files. Hands off to /review.
+description: Re-derive the simplest, cleanest architecture for the problem from first principles. Deep modules, narrow interfaces, state machines for lifecycle, ports & adapters for I/O, Effect-first for effectful paths. Runs after /interview has established the core shape of the problem and the user's solution direction. If /scout was not run first, performs deep grounding research before designing so missing edge cases surface here. Uses shelf, repo search, node_modules source, official docs, exa, context7, and gh_grep as applicable. Produces an architecture proposal in conversation context — no files. Hands off to /review.
 ---
 
 # /architect
@@ -23,15 +23,25 @@ Citations for these rules are in `AGENTS_sources.md` at the root of this devbox 
 
 ## Process
 
+0. Confirm whether `/scout` ran for this problem. If it did not, do a scout-equivalent grounding pass before designing. Dig deep enough to find missing edge cases, not just enough to feel familiar:
+   - Read the relevant repo code and tests; use ast-grep/rg for structural and text search.
+   - Search `node_modules` or installed package source when the dependency is present locally; source beats memory.
+   - Use `shelf` for cached reference repos and run `shelf detect` / `shelf list` / `shelf update` when reference code may clarify behavior.
+   - Use context7 for documented API shape and valid options.
+   - Use gh_grep for real-world usage patterns and migration gotchas.
+   - Use exa for current docs, issue threads, release notes, and war stories when behavior may be version- or platform-specific.
+   - Read official online documentation when the architecture depends on product semantics, limits, pricing, permissions, lifecycle, or security behavior.
+   - Enumerate edge cases, lifecycle states, failure modes, existing conventions, and compatibility constraints found during grounding.
+   Do not output a separate scout brief; fold the findings into the architecture.
 1. Restate the problem in one sentence, from first principles. Do not carry forward the user's phrasing if it encodes a solution.
-2. Enumerate constraints — what must remain true.
+2. Enumerate constraints — what must remain true, including constraints and edge cases found during grounding.
 3. Name the core trade-off in one sentence: "I am trading X for Y."
 4. Derive the minimal architecture that satisfies the constraints. Draw a mermaid diagram of the runtime flow or module graph. If the change has lifecycle (anything with states like pending/active/closed/paid/etc.), also draw a `stateDiagram-v2`.
 5. For each module, specify: responsibility, interface signature, what it hides, dependency category (in-process / local-substitutable / ports-and-adapters / true-external).
 6. Write one paragraph explaining why this is the simplest version — what you considered and discarded and why.
 7. State explicit non-goals.
 
-If you cannot ground a decision (library behavior, API shape, existing code structure), stop and ground it using context7 / gh_grep / ast-grep / Read — do not guess.
+If you cannot ground a decision (library behavior, API shape, existing code structure, external service semantics), stop and ground it using the strongest available source: repo code/tests, node_modules source, shelf reference repos, official docs, context7, gh_grep, exa, ast-grep, or Read. Do not guess.
 
 ## Output shape
 

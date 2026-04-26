@@ -81,9 +81,12 @@ Training data is my starting point, not my source of truth. If the answer depend
 | Question I'm answering | Tool I reach for |
 |---|---|
 | "What does this library/API do?" / "What are the valid options for this config?" | **context7** |
+| "What does the installed package actually do?" | **node_modules source + types** |
+| "What does upstream/reference source do?" | **shelf reference repos** |
 | "Show me real usage of this function/flag/pattern." | **gh_grep** |
 | "Find every spot in *this* repo matching this structural pattern." | **ast-grep** |
 | "What's the latest on X?" / "Fetch the content at this URL." | **exa** |
+| "What does the product owner promise or limit?" | **official online docs** |
 
 ### Rules
 
@@ -98,17 +101,18 @@ For non-trivial work I follow this compounding loop. Each skill ends with an exp
 
 | Stage | Skill | Purpose |
 |---|---|---|
-| 0 | `/scout` | Optional pre-`/interview` step. Maps prior art in this repo, the library/pattern landscape, and discovered constraints into a one-screen brief. Use when the domain is unfamiliar enough that `/interview` would grind. Hands off to `/interview` with grounded context loaded. |
+| 0 | `/scout` | Optional pre-`/interview` step. Digs deep with repo search, shelf reference repos, node_modules source, official docs, exa, context7, and gh_grep as applicable; maps prior art, edge cases, failure modes, library/product semantics, and discovered constraints into a one-screen brief. Use when the domain is unfamiliar enough that `/interview` would grind. Hands off to `/interview` with grounded context loaded. |
 | 1 | `/interview` | Relentless, unscripted grill. One question at a time. Gets the core shape of the problem AND the user's intended solution direction. Explores the codebase when the answer is in the code. |
-| 2 | `/architect` | Re-derives the simplest architecture from first principles: deep modules, narrow interfaces, state machines for lifecycle, ports & adapters at I/O boundaries. Output is prose + mermaid, in conversation context only. |
+| 2 | `/architect` | Re-derives the simplest architecture from first principles: deep modules, narrow interfaces, state machines for lifecycle, ports & adapters at I/O boundaries. If `/scout` did not run before `/interview`, performs scout-equivalent deep grounding with repo search, shelf reference repos, node_modules source, official docs, exa, context7, and gh_grep as applicable to surface missing edge cases before designing. Output is prose + mermaid, in conversation context only. |
 | 3 | `/review` | Pressure-tests the architecture: principle-compliance pass + parallel reality-check. Produces an edited, locked architecture. |
 | 4 | `/issue` | Creates a clean GitHub issue from the locked architecture. Body: Problem / Architecture (+mermaid) / Modules / Verification / Out of scope. No changes list, no test plan. |
 | 5 | `/work` | Executes on the **current branch**. No worktrees, no new branches unless explicitly confirmed on trunk. Commits reference `#<issue>`. |
 | 6 | `/pr` | Opens PR with a minimal body: Summary (2-4 sentences) + mermaid Flow diagram + `Closes #<issue>`. No changes or tests sections. Watches CI (`gh pr checks --watch --fail-fast`) — PR is not complete until checks pass. |
 | 7 | `/code-review` | Six reviewer personas in parallel; dedup + validator pass; posts line-level and summary comments to the PR via `gh pr review` and `gh api`. |
 | 8 | `/address` | Triages PR review comments into Address / Push-back / Escalate and executes immediately — no approval gate. Pushback rows must cite a specific principle. Resolves threads silently via GraphQL (no replies). Watches CI after push — loop is not complete until checks pass. Escalates into `/interview` or `/architect` when a comment surfaces something non-trivial. |
-| 9 | `/learn` | Writes `docs/learnings/YYYY-MM-DD-<slug>.md` capturing what was planned, what actually shipped, what surfaced in review, the non-obvious lesson, and any AGENTS.md amendment candidate. |
-| — | `/debug` | Alternative entry point. Reproduce → root-cause → fix. Refuses to fix without a reproduction. Chains into `/pr` → `/code-review` → `/address` → `/learn`. |
+| 9 | `/learn` | Writes `docs/learnings/YYYY-MM-DD-<slug>.md` capturing what was planned, what actually shipped, what surfaced in review, the non-obvious lesson, and any AGENTS.md amendment candidate. Commits and pushes the learning, then hands off to `/merge`. |
+| 10 | `/merge` | Verifies the PR branch is clean, learned, pushed, reviewed, and green; merges through GitHub with head-SHA protection; deletes the branch; checks out and fast-forwards the base branch. |
+| — | `/debug` | Alternative entry point. Reproduce → root-cause → fix. Refuses to fix without a reproduction. Chains into `/pr` → `/code-review` → `/address` → `/learn` → `/merge`. |
 | — | `/incident` | Production-pressure entry point. Contain (rollback / flag-off / disable) → communicate → hand off. Distinct from `/debug` (reproduce-first, calm). Hands off to `/debug` if the underlying bug still needs fixing, or `/learn` if rollback was the fix. |
 
 ### Rules
@@ -117,7 +121,8 @@ For non-trivial work I follow this compounding loop. Each skill ends with an exp
 - I never start a skill mid-chain without its precondition artifact. `/work` requires an issue. `/address` requires a PR with comments. `/code-review` requires a PR.
 - I do not auto-chain. I end each skill with its handoff line and let the user invoke the next one.
 - `/address` runs autonomously: prints the triage table for transparency, then executes. The user can interrupt; silence is consent. Pushback rows must cite a specific principle (locked architecture, AGENTS.md rule, issue scope) — without a citable reason the verdict becomes Address.
-- `/scout` is optional and only earns its keep when the domain is unfamiliar. For familiar work, skip straight to `/interview`.
+- `/scout` is optional and only earns its keep when the domain is unfamiliar. For familiar work, skip straight to `/interview`; `/architect` must do scout-equivalent grounding if no scout brief exists.
+- `/merge` is the only normal workflow skill allowed to merge a PR into trunk. It must merge through GitHub, never by direct local commits to trunk.
 - `/incident` is the only skill allowed to merge directly to trunk, and only with explicit confirmation in Phase 1. Containment beats process when production is on fire.
 - Skill files live under `skills/<name>/SKILL.md` in the devbox repo and sync to every machine.
 

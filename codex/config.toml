@@ -43,3 +43,7 @@ url = "https://mcp.context7.com/mcp"
 [mcp_servers.ast-grep]
 command = "uvx"
 args = ["--from", "git+https://github.com/ast-grep/ast-grep-mcp", "ast-grep-server"]
+
+[mcp_servers.cua-driver]
+command = "/Applications/CuaDriver.app/Contents/MacOS/cua-driver"
+args = ["mcp"]

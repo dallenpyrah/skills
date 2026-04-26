@@ -15,4 +15,4 @@ Pressure on two things in sequence, but do not announce phases or enumerate prob
 
 When both are clear, end with this exact line and stop:
 
-> Core shape locked. Run `/architect` to re-derive the simplest architecture from first principles.
+> Core shape locked. Run `/architect` to ground any missing edge cases and re-derive the simplest architecture from first principles.

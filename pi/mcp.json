@@ -24,6 +24,11 @@
         "git+https://github.com/ast-grep/ast-grep-mcp",
         "ast-grep-server"
       ]
+    },
+    "cua-driver": {
+      "type": "stdio",
+      "command": "/Applications/CuaDriver.app/Contents/MacOS/cua-driver",
+      "args": ["mcp"]
     }
   }
 }
