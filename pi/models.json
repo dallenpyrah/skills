@@ -1,0 +1,123 @@
+{
+  "providers": {
+    "vibeproxy-anthropic": {
+      "baseUrl": "http://localhost:8317",
+      "api": "anthropic-messages",
+      "apiKey": "dummy-not-used",
+      "compat": {
+        "supportsEagerToolInputStreaming": false,
+        "supportsLongCacheRetention": false
+      },
+      "models": [
+        {
+          "id": "claude-opus-4-5-20251101",
+          "name": "VibeProxy Claude Code: Opus 4.5",
+          "reasoning": false,
+          "input": ["text", "image"],
+          "contextWindow": 200000,
+          "maxTokens": 32000
+        },
+        {
+          "id": "claude-opus-4-5-20251101-thinking-10000",
+          "name": "VibeProxy Claude Code: Opus 4.5 Thinking 10k",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 200000,
+          "maxTokens": 32000
+        },
+        {
+          "id": "claude-opus-4-5-20251101-thinking-32000",
+          "name": "VibeProxy Claude Code: Opus 4.5 Thinking 32k",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 200000,
+          "maxTokens": 32000
+        },
+        {
+          "id": "claude-sonnet-4-5-20250929",
+          "name": "VibeProxy Claude Code: Sonnet 4.5",
+          "reasoning": false,
+          "input": ["text", "image"],
+          "contextWindow": 200000,
+          "maxTokens": 32000
+        },
+        {
+          "id": "claude-sonnet-4-5-20250929-thinking-10000",
+          "name": "VibeProxy Claude Code: Sonnet 4.5 Thinking 10k",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 200000,
+          "maxTokens": 32000
+        },
+        {
+          "id": "claude-sonnet-4-5-20250929-thinking-32000",
+          "name": "VibeProxy Claude Code: Sonnet 4.5 Thinking 32k",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 200000,
+          "maxTokens": 32000
+        }
+      ]
+    },
+    "vibeproxy-openai": {
+      "baseUrl": "http://localhost:8317/v1",
+      "api": "openai-completions",
+      "apiKey": "dummy-not-used",
+      "compat": {
+        "supportsStore": false,
+        "supportsUsageInStreaming": false,
+        "maxTokensField": "max_tokens"
+      },
+      "models": [
+        {
+          "id": "gpt-5.1-codex",
+          "name": "VibeProxy Codex: GPT-5.1 Codex",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 256000,
+          "maxTokens": 32000
+        },
+        {
+          "id": "gpt-5.1-codex(high)",
+          "name": "VibeProxy Codex: GPT-5.1 Codex High",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 256000,
+          "maxTokens": 32000
+        },
+        {
+          "id": "gpt-5.1-codex-max",
+          "name": "VibeProxy Codex: GPT-5.1 Codex Max",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 256000,
+          "maxTokens": 32000
+        },
+        {
+          "id": "gemini-claude-opus-4-5-thinking",
+          "name": "VibeProxy Antigravity: Claude Opus 4.5 Thinking",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 200000,
+          "maxTokens": 32000
+        },
+        {
+          "id": "gemini-claude-sonnet-4-5-thinking",
+          "name": "VibeProxy Antigravity: Claude Sonnet 4.5 Thinking",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 200000,
+          "maxTokens": 32000
+        },
+        {
+          "id": "gemini-3-pro-preview",
+          "name": "VibeProxy Antigravity/Copilot: Gemini 3 Pro",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 1000000,
+          "maxTokens": 32000
+        }
+      ]
+    }
+  }
+}

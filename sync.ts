@@ -4,9 +4,9 @@
  *
  * Scope:
  *  - systems: brew, gh, bun, node
- *  - tools:   claude, codex, pi, cua-driver, shelf, parallel-cli, uvx, ast-grep
+ *  - tools:   claude, codex, pi, VibeProxy, cua-driver, shelf, parallel-cli, uvx, ast-grep
  *  - dotfiles: shell, git, claude (+skills, +commands, +MCP), codex (+skills),
- *              pi (+skills, +MCP), ghostty
+ *              pi (+skills, +MCP, +settings, +VibeProxy models), ghostty
  *
  * MCP servers are declarative:
  *  - claude/mcp-servers.json is merged into ~/.claude.json (top-level mcpServers)
@@ -86,6 +86,33 @@ const appendOnce = (line: string, file: string) =>
     fs.writeFileSync(file, `${current}${sep}${line}\n`);
   });
 
+const installLatestVibeProxy = Effect.gen(function* () {
+  if (yield* exists("/Applications/VibeProxy.app")) return;
+
+  yield* shInherit(`
+    set -euo pipefail
+    arch="$(uname -m)"
+    case "$arch" in
+      arm64) asset="VibeProxy-arm64.zip" ;;
+      x86_64) asset="VibeProxy-x86_64.zip" ;;
+      *) echo "unsupported VibeProxy architecture: $arch" >&2; exit 1 ;;
+    esac
+
+    url="$(gh api repos/automazeio/vibeproxy/releases/latest --jq '.assets[] | select(.name == "'"'$asset'"'") | .browser_download_url')"
+    tmp="$(mktemp -d)"
+    trap 'rm -rf "$tmp"' EXIT
+
+    curl -fsSL "$url" -o "$tmp/$asset"
+    unzip -q "$tmp/$asset" -d "$tmp"
+    app="$(find "$tmp" -maxdepth 2 -name 'VibeProxy.app' -type d | head -n 1)"
+    test -n "$app"
+
+    rm -rf /Applications/VibeProxy.app
+    cp -R "$app" /Applications/VibeProxy.app
+    xattr -dr com.apple.quarantine /Applications/VibeProxy.app 2>/dev/null || true
+  `);
+});
+
 const mergeJson = (srcFile: string, dstFile: string, key: string) =>
   Effect.sync(() => {
     const src = JSON.parse(fs.readFileSync(srcFile, "utf8"));
@@ -128,6 +155,7 @@ const installTools = Effect.gen(function* () {
   if (!(yield* has("codex"))) yield* tryExec("brew", ["install", "--cask", "codex"]);
   if (!(yield* has("pi"))) yield* tryExec("npm", ["install", "-g", "@mariozechner/pi-coding-agent"]);
   yield* tryExec("pi", ["install", "npm:pi-mcp-adapter"]);
+  yield* installLatestVibeProxy;
   if (!(yield* exists("/Applications/CuaDriver.app/Contents/MacOS/cua-driver"))) {
     yield* shInherit(`
       set -euo pipefail
@@ -180,11 +208,13 @@ const syncDotfiles = Effect.gen(function* () {
   yield* cp(join(DOTFILES, "AGENTS.md"), join(HOME, ".codex/AGENTS.md"));
   yield* cpTree(join(DOTFILES, "skills"), join(HOME, ".codex/skills"));
 
-  // pi: AGENTS + skills (under a package dir per pi convention) + MCP config
+  // pi: AGENTS + skills (under a package dir per pi convention) + MCP + settings + VibeProxy models
   yield* ensureDir(join(HOME, ".pi/agent"));
   yield* cp(join(DOTFILES, "AGENTS.md"), join(HOME, ".pi/agent/AGENTS.md"));
   yield* cpTree(join(DOTFILES, "skills"), join(HOME, ".pi/agent/skills/compound"));
+  yield* cp(join(DOTFILES, "pi/settings.json"), join(HOME, ".pi/agent/settings.json"));
   yield* cp(join(DOTFILES, "pi/mcp.json"), join(HOME, ".pi/agent/mcp.json"));
+  yield* cp(join(DOTFILES, "pi/models.json"), join(HOME, ".pi/agent/models.json"));
 
   // ghostty
   yield* cp(join(DOTFILES, "ghostty/config"), join(HOME, ".config/ghostty/config"));
