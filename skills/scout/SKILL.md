@@ -1,71 +1,240 @@
 ---
 name: scout
-description: Pre-/interview grounding for unfamiliar domains. Digs deep with repo search, shelf reference repos, node_modules source, official docs, exa, context7, and gh_grep as applicable. Maps prior art, edge cases, failure modes, library/product semantics, and discovered constraints into a one-screen brief that feeds /interview with context. Use when the user can't yet articulate the trade-off space — new library, new external service, new pattern, or a corner of the repo you haven't read.
+description: Pre-/interview grounding for unfamiliar domains. Maps one concrete library, module, external service, API, repo area, or pattern using repo search, tests, node_modules source, official docs, context7, gh_grep, exa, shelf, structural search, first-principles decomposition, and game-theoretic incentive analysis. Produces a one-screen brief. No recommendations yet. Hands off to /interview.
 ---
 
 # /scout
 
-Map the territory before the interview. Use this when the domain is unfamiliar enough that `/interview` would grind on "I don't actually know what's possible here" — a new library, a new external service, a new pattern, or a part of the repo you haven't read.
+Map the territory before `/interview`.
 
-This is not research-for-research's-sake. Dig deep enough to uncover edge cases and constraints that would change the architecture, then compress the result into a one-screen brief that feeds the next skill — nothing more.
+Use this when the domain is unfamiliar enough that interviewing would stall on unknown facts: a new library, external service, repo area, architectural pattern, API, migration path, or failure mode.
+
+This skill is not research for research’s sake. It should uncover constraints that would change the architecture.
 
 ## Pick the topic
 
 The topic comes from one of:
 
-1. An explicit phrase in the invocation (e.g. `/scout effect layers`, `/scout the billing module`).
+1. Explicit invocation text, e.g. `/scout effect layers`.
 2. The active question the user is stuck on.
-3. If neither is clear, ask exactly one question: **"What domain should I scout?"** Then stop.
+3. The linked issue or PR context, if invoked from a workflow.
 
-"Scout the codebase" is not a topic. Narrow to one concrete thing — a library, a module, a pattern, an external service.
+If the topic is missing, ask exactly one question and stop:
 
-## Ground in parallel
+> What domain should I scout?
 
-Run all applicable grounding tools in parallel (one message, multiple tool calls). Each owns a different question:
+Bad topics:
+
+- “the codebase”
+- “the app”
+- “architecture”
+- “tests”
+- “game theory”
+
+Good topics:
+
+- “Effect Layer usage in this repo”
+- “billing webhook idempotency”
+- “GitHub PR review comments API”
+- “the auth session lifecycle”
+- “state modeling for imports”
+- “current fallback/default patterns”
+- “review comments as a code-health mechanism”
+
+## Scout stance
+
+Be concrete. Cite or do not claim.
+
+The output should help `/interview` ask better questions and help `/architect` avoid hallucinated constraints.
+
+Do not recommend the solution yet.
+
+## First-principles scouting
+
+For the topic, identify:
+
+- primitive facts
+- actors
+- invariants
+- constraints
+- irreversible decisions
+- state/lifecycle
+- external dependencies
+- failure modes
+- hidden assumptions
+- source of truth
+
+## Game-theoretic scouting
+
+For the topic, identify:
+
+- players
+- incentives
+- local shortcuts
+- global costs
+- information asymmetries
+- principal-agent relationships
+- repeated-game risks
+- adversarial behavior
+- coordination failures
+- what the current system makes easy or hard
+
+Examples:
+
+- A broad helper makes local implementation easy but global coupling likely.
+- A silent default makes local code pass but hides operational failure.
+- A mock-only test makes the author move fast but gives reviewers false confidence.
+- A missing port makes a module convenient now but costly to test and migrate later.
+- An unclear interface lets callers guess, creating inconsistent behavior over repeated changes.
+
+## Grounding matrix
+
+Run applicable sources in parallel. Skip a source only when its question does not apply, and say why.
 
 | Source | Question it answers |
 |---|---|
-| **repo code/tests via Read, rg, ast-grep** | What already exists here? What patterns has this codebase committed to? What edge cases are already tested? |
-| **`node_modules` / installed package source** | What does the local dependency actually do at this installed version? What types, defaults, and runtime guards exist? |
-| **shelf (`shelf detect`, `shelf list`, `shelf update`, reference repo search)** | Is there cached upstream/source reference code that clarifies behavior or idioms? |
-| **context7** | What is the official shape / API / valid options? |
-| **gh_grep** | What does real-world usage look like? Are there idiomatic patterns, workarounds, or migration gotchas? |
-| **exa** | What's current: official docs pages, issue threads, release notes, alternatives, war stories, version/platform-specific gotchas? |
-| **official online docs** | What semantics, limits, permissions, lifecycle, security, pricing, or operational constraints does the product owner document? |
+| repo files/tests with `rg` | What exists here? What names, flows, tests, and conventions are already committed? |
+| structural search with ast-grep | What code shapes exist independent of spelling? |
+| symbol/type search | Where are the real definitions and call sites? |
+| git history | What was tried, reverted, renamed, or migrated? |
+| `docs/learnings/` | What has this repo already learned? |
+| `skills/` | Is there an existing workflow/pattern to reuse? |
+| `node_modules` / installed package source | What does the installed version actually do? |
+| package metadata / lockfile | Which version and feature set are actually installed? |
+| official docs | What semantics, limits, lifecycle, permissions, pricing, or security behavior are documented? |
+| context7 | What is the current version-specific API shape? |
+| gh_grep / public code search | How do real projects use this API or pattern? |
+| shelf reference repos | Is there cached upstream/reference code? |
+| exa / web search | What recent docs, release notes, issue threads, or war stories change the decision? |
 
-Skip a source only if its question doesn't apply (e.g. `gh_grep` for a private internal library, `node_modules` when no local package exists), but say so explicitly — silently skipping looks like an oversight.
+## Search procedure
 
-## Render the brief
+### 1. Local first
 
-Output uses these verbatim headings, one screen:
+Start with repo evidence:
 
+```bash
+rg "<topic keywords>"
+rg "<type or function name>"
+rg "<status/fallback/error/state keyword>"
 ```
+
+Use `rg -uuu` only when hidden/generated/ignored files are relevant.
+
+### 2. Structural next
+
+Use ast-grep when text search is too shallow:
+
+```bash
+ast-grep -p '<pattern>'
+```
+
+Use it for:
+
+- broad `try/catch`
+- swallowed errors
+- raw `Promise` in Effect-owned code
+- `extends`
+- status booleans/nullables
+- direct I/O calls
+- direct vendor SDK calls
+- default/fallback patterns
+- repeated wrapper shapes
+- broad manager/service/helper modules
+- duplicated source-of-truth patterns
+
+### 3. Definitions and references
+
+Use symbol search, type search, or GitHub Code Search when local navigation is insufficient.
+
+Find defining modules, exported interfaces, call sites, tests, adapters, migration files, and deleted/renamed predecessors.
+
+### 4. Package/source truth
+
+When a library matters:
+
+1. Identify installed version from lockfile/package metadata.
+2. Inspect local `node_modules` source/types.
+3. Use official docs for semantics.
+4. Use context7 for current version-specific docs when available.
+5. Use public code search only as supporting evidence, never as source of truth.
+
+### 5. External service truth
+
+When an external service matters, official docs win.
+
+Scout API shape, auth model, rate limits, retry semantics, idempotency, pagination, webhooks, failure modes, permission model, pricing/quotas, eventual consistency, deprecation/versioning, and security constraints.
+
+### 6. Stop condition
+
+Stop when additional research is unlikely to change module boundaries, state model, error model, port/adapter shape, performance constraint, security constraint, migration strategy, incentives, or interview questions.
+
+Do not keep collecting facts for completeness.
+
+## Output
+
+One screen only. Use these headings exactly:
+
+```markdown
 ## Domain
-<one sentence — what we're scouting and why now>
+<one sentence — what was scouted and why now>
+
+## Evidence gathered
+- <source> — <what it proved>
+- <source> — <what it proved>
 
 ## Prior art in this repo
-<what exists, what's missing, what was clearly attempted-and-abandoned. Cite file paths.>
+<what exists, what is missing, what was attempted/abandoned. Cite file paths, commits, comments, or learning files.>
 
-## Library / pattern landscape
-<top 2-3 options. For each: one-line description, one-line trade-off. The trade-off is what matters.>
+## First-principles decomposition
+- Primitive facts:
+- Invariants:
+- Constraints:
+- Failure modes:
+- Source of truth:
+
+## Game board
+- Players:
+- Incentives:
+- Information asymmetries:
+- Bad local move:
+- Global cost:
+- Desired equilibrium:
+
+## Library / API / pattern landscape
+<top 2-3 relevant options or shapes. One line each. Include trade-off, not feature list.>
 
 ## Constraints and edge cases discovered
-<bullets — what must remain true based on existing code, framework choices, deployed state, AGENTS.md rules, docs, source, lifecycle states, failure modes, and version/platform limits>
+- <constraint or edge case>
+- <failure mode>
+- <compatibility concern>
+- <security/performance/lifecycle concern>
 
 ## Open questions for /interview
-<3-5 questions the brief surfaced but cannot answer alone. The interview will pressure-test these.>
+1. <question the evidence cannot answer>
+2. <question>
+3. <question>
+4. <question>
+5. <question>
 ```
 
 ## Rules
 
-- **One screen.** If the brief overflows, you're scouting too broad. Narrow and rerun.
-- **Cite or don't claim.** Every "this exists" or "this is idiomatic" needs a file path or a tool result. Hallucinated prior art is worse than no brief.
-- **Trade-offs, not features.** "Library X has more stars" is noise. "Library X requires a runtime, Library Y is compile-time-only" is signal.
-- **No recommendations yet.** `/scout` maps the territory; `/interview` and `/architect` decide the path.
-- **Deep means decision-changing.** Keep digging until additional research is unlikely to change the architecture, then stop and compress.
+- One concrete topic.
+- One screen.
+- Cite or do not claim.
+- Trade-offs, not feature lists.
+- No recommendations yet.
+- No architecture yet.
+- No implementation steps yet.
+- Local code and installed source beat memory.
+- Official docs beat blog posts for API semantics.
+- Public code search shows patterns, not correctness.
+- If a source was skipped, say why.
+- If evidence conflicts, name the conflict instead of resolving it by guess.
+- If a local shortcut creates global cost, surface it.
+- If an interface creates bad incentives, surface it.
 
-## Output
-
-The rendered brief is the output. End with exactly this line and stop:
+End with exactly this line and stop:
 
 > Scout brief delivered. Run `/interview` to pressure-test the problem and direction with this context loaded.

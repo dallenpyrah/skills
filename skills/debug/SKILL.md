@@ -1,82 +1,230 @@
 ---
 name: debug
-description: Standalone bug-investigation entry point. Reproduce the failure (require a failing test or trace), trace the root cause, implement the minimal fix, then consider whether the fix generalizes. Invokes /interview inline if root-cause hypotheses keep failing. Hands off to /pr.
+description: Standalone bug-investigation entry point. Requires a reproduction, traces root cause with hypotheses and experiments, analyzes the bug from first principles and game theory, implements the minimal fix, verifies the original reproduction and regression test, then records whether the fix generalizes. Invokes /interview inline after three failed hypotheses. Hands off to /pr.
 ---
 
 # /debug
 
-Bug work. This skill is an alternative entry point to the workflow — it skips `/interview` and `/architect` because the problem shape is usually "code does X, it should do Y" and the architecture usually doesn't change. Chains into `/pr` → `/code-review` → `/address` → `/learn` like any other branch.
+Investigate and fix a bug.
 
-## Phase 1 — Reproduce (non-negotiable)
+This skill is an alternative workflow entry point. It skips `/interview` and `/architect` only when the problem shape is already: “the code does X, but it should do Y.”
 
-Do not attempt a fix without a reproduction. "I think I know what's wrong" is not a reproduction.
+Do not redesign the system unless the bug proves the architecture is wrong.
 
-Require one of:
-- A failing test that exercises the bug.
-- A minimal command that triggers the failure on demand with the failure output.
-- A trace / log / error message with enough detail to identify the call path.
+## Preconditions
 
-If the user has not provided a reproduction, ask for one. If it cannot be produced:
-- Try to write a minimal failing test that targets the hypothesized behavior.
-- If even that is impossible (e.g., the bug is in an external system or non-deterministic), tell the user this is not a bug-fix task — it is a research task — and stop. Offer to re-enter as `/interview` to scope the research.
+- You are inside the target repository.
+- The working tree is clean unless the user explicitly says the uncommitted changes are part of the bug context.
+- If a PR already exists for the current branch, note it, but do not post a review.
+- If the bug belongs to an existing issue, capture the issue number.
+- If the user provides logs, traces, screenshots, or commands, preserve exact text. Do not paraphrase errors during the trace.
 
-Lock the reproduction in: commit the failing test first if feasible (as a separate commit with a `test: reproduce <bug>` message, skipped with `.skip` or `.failing` annotation so CI stays green).
+## Phase 0 — Classify
 
-## Phase 2 — Root-cause trace
+Before touching code, classify the task:
 
-Starting from the failure site, walk outward through the call graph. For each frame, state what it assumed and what was actually true. Ground library/API behavior with context7 or gh_grep if uncertain.
+- **Bug fix:** observed behavior differs from expected behavior and can be reproduced.
+- **Research:** behavior is unclear, external, intermittent, or not reproducible yet.
+- **Architecture change:** the fix requires a new module boundary, state model, port, migration, or broader design.
 
-Maintain a short list of hypotheses. For each:
-- State the hypothesis.
-- State the experiment that would confirm or kill it.
-- Run the experiment.
+If this is research, stop and recommend `/scout` or `/interview`.
+If this is architecture, stop and recommend `/interview` → `/architect`.
+If this is a bug fix, continue.
 
-**Three-strike rule.** If you have three failed hypotheses, stop guessing. Your model of the bug is wrong. Invoke `/interview` inline: have the user walk you through what they know, what they've tried, and what they assume. Do not continue guessing.
+## Phase 1 — Reproduce
 
-Do not swallow errors. Every error observed during the trace is signal — quote it verbatim in your notes.
+No fix without a reproduction.
 
-## Phase 3 — Fix
+Require at least one:
 
-Make the minimal change that addresses the root cause. Not the surrounding cleanup. Not the tempting refactor. One focused fix.
+1. Failing test.
+2. Minimal command that triggers the failure on demand.
+3. Trace/log/error message with enough detail to identify the call path.
+4. Deterministic local reproduction created by you from the reported behavior.
 
-Verify:
-1. The failing test from Phase 1 now passes.
-2. All other tests still pass.
-3. The bug cannot be triggered by the original reproduction command.
+A valid reproduction must include exact command/test, exact failure output, expected behavior, actual behavior, relevant environment, and the smallest input known to trigger the bug.
 
-Commit:
+If the user did not provide a reproduction, try to create one, search existing tests, write the smallest failing test or command, and stop if still impossible.
 
+### Regression test rule
+
+Prefer to create a regression test before the fix. You may commit a failing test first when branch policy allows, use expected-failure conventions only if the repo already uses them and CI remains green, or keep the failing test uncommitted until the fix. Do not pretend a skipped test proves the bug.
+
+## Phase 2 — First-principles trace
+
+Start at the failure site and walk outward through the call graph.
+
+For each relevant frame or module, record:
+
+```text
+Frame/module:
+Invariant:
+Assumed:
+Actually true:
+Evidence:
 ```
+
+Reduce the bug to broken invariant, incorrect assumption, missing boundary validation, invalid state, wrong source of truth, wrong dependency direction, unmodeled effect, hidden fallback, missing synchronization, or library/API misunderstanding.
+
+## Phase 3 — Game-theoretic bug diagnosis
+
+Ask what incentive or mechanism allowed the bug.
+
+Record:
+
+```markdown
+## Game-theory diagnosis
+- Player:
+- Local incentive:
+- Hidden information:
+- Bad move made easy:
+- Good move made expensive:
+- Bad equilibrium:
+- Mechanism needed:
+```
+
+Examples:
+
+- Caller was incentivized to pass raw input because validation was far away.
+- Maintainer was incentivized to add another boolean because lifecycle state had no state machine.
+- Adapter author was incentivized to catch-and-continue because errors were not typed.
+- Reviewer could not see the risk because tests mocked away the dangerous behavior.
+- Future implementer duplicated knowledge because no single source of truth existed.
+
+## Phase 4 — Hypotheses and experiments
+
+Maintain a hypothesis ledger:
+
+```markdown
+| # | Hypothesis | Experiment | Result | Status |
+|---|---|---|---|---|
+| 1 | ... | ... | ... | confirmed/killed/open |
+```
+
+Rules:
+
+- One hypothesis per experiment.
+- Prefer experiments that can kill a hypothesis.
+- Quote errors verbatim.
+- Inspect source, tests, package code, or official docs when behavior is uncertain.
+- Use `git bisect` when the bug is a regression and good/bad commits are known.
+- Use logs/traces only to narrow the search; confirm with code or tests.
+
+### Three-strike rule
+
+After three killed hypotheses, stop guessing.
+
+Invoke `/interview` inline and ask the user what they know, what changed recently, what they tried, what assumptions they hold, and what “correct” means.
+
+Do not continue with a fourth guess until the model changes.
+
+## Phase 5 — Fix
+
+Make the smallest change that addresses the root cause.
+
+Rules:
+
+- One fix per commit.
+- No drive-by cleanup.
+- No opportunistic refactor.
+- No unrelated formatting.
+- No hidden fallback.
+- No swallowed errors.
+- No broad `try/catch`.
+- If using Effect-owned code, use Effect primitives and typed errors.
+- Recovery is allowed only when explicit, typed, observable, and tested.
+- If the right fix is architectural, stop and hand off to `/interview` → `/architect`.
+
+Before editing, state:
+
+```markdown
+## Root cause
+<one paragraph>
+
+## Minimal fix
+<one paragraph>
+
+## Mechanism change
+<how this prevents the same local bad move>
+
+## Why not broader
+<one paragraph>
+```
+
+Then implement.
+
+## Phase 6 — Verify
+
+Run verification in this order:
+
+1. Original reproduction fails before the fix or has already been proven to fail.
+2. Regression test passes after the fix.
+3. Original command/input no longer triggers the bug.
+4. Relevant existing tests pass.
+5. Error path introduced or touched by the fix is tested.
+6. No lint/type errors for the changed surface.
+7. No new silent fallback or swallowed error was introduced.
+8. The bad local move is now impossible, expensive, or loud.
+
+Record exact commands and outcomes.
+
+If verification fails, return to Phase 2. Do not stack fixes blindly.
+
+## Phase 7 — Commit
+
+Commit only the bug fix and its regression test.
+
+Commit message:
+
+```text
 fix: <one-line summary>
 
-<short paragraph explaining the root cause>
-<short paragraph explaining why this fix addresses it>
+Root cause: <short paragraph explaining the wrong assumption or broken invariant>.
 
-Refs #<issue> (if an issue exists)
+Fix: <short paragraph explaining why this change addresses the root cause>.
+
+Mechanism: <short paragraph explaining how this makes recurrence harder or louder>.
+
+Verification:
+- <command> — <result>
+- <command> — <result>
+
+Refs #<issue>   # only when an issue exists
 ```
 
-If no issue exists yet and the bug is worth tracking, consider running `/issue` for the architecture of the fix. For trivial fixes, skip the issue — the commit message is enough.
+If a failing reproduction was committed separately, use `test: reproduce <bug>` first.
 
-## Phase 4 — Generalize
+## Phase 8 — Generalize
 
-Ask: is this fix preventing one instance of a class of bugs? Examples:
-- "This null check should exist at every boundary of this type."
-- "This race condition pattern is likely elsewhere."
-- "This API misuse suggests our wrapper is shallow."
+Ask whether the root cause is one instance of a broader class: missing boundary validation, recurring race, invalid state representable, shallow wrapper hiding a bug, missing port, bad fallback/default, brittle mock, untested error path, library/API misuse, migration inconsistency, or local incentive misaligned with global correctness.
 
-If yes, note the pattern in conversation. `/learn` will pick it up.
-
-If the generalization implies a broader change, do NOT bundle it here. File a follow-up issue via `/issue`. Keep the bug fix small.
+If yes, note the pattern, do not bundle the broader fix, create or recommend a follow-up issue through `/issue`, and leave durable learning for `/learn`.
 
 ## Output
 
-Print the fix commit SHA and a one-line summary. Then end with exactly this line and stop:
+Print:
+
+```text
+fix_commit=<sha>
+summary=<one-line summary>
+reproduction=<command or test>
+verification=<commands run>
+generalization=<none or short pattern>
+mechanism_change=<how recurrence was made harder/louder>
+```
+
+Then end with exactly this line and stop:
 
 > Bug fixed. Run `/pr` to open the pull request.
 
-## Rules
+## Hard rules
 
-- **No fix without a reproduction.** Hardest rule; the one that makes this skill worth having.
-- **Three-strike rule.** Three failed hypotheses means your model is wrong — invoke `/interview`, don't guess a fourth.
-- **One fix per commit.** No drive-by cleanup. Drive-by cleanup hides the fix in the diff.
-- **Swallowed errors are never okay.** Every error observed during the trace gets quoted in your notes.
+- No fix without reproduction.
+- Three failed hypotheses means stop and interview.
+- One fix per commit.
+- No drive-by cleanup.
+- Swallowed errors are never okay.
+- Exact errors must be quoted.
+- Do not silently fall back.
+- Do not use architecture work as a bug-fix shortcut.
+- Fix the mechanism when the bug was caused by bad incentives.

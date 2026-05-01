@@ -1,51 +1,171 @@
 ---
 name: learn
-description: Capture the post-mortem for a compound-engineering cycle. Reads the issue, PR, review comments (addressed + pushed-back), and git log. Writes docs/learnings/YYYY-MM-DD-slug.md, commits it, pushes the branch, and hands off to /merge when the PR is still open.
+description: Capture the post-mortem for a compound-engineering cycle. Reads the issue, PR, review comments, git log, and final diff. Extracts what worked, what changed, what incentives caused friction, what mechanisms improved code health, and what durable rule should be considered. Writes docs/learnings/YYYY-MM-DD-slug.md, commits it, pushes the branch, and hands off to /merge when the PR is still open.
 ---
 
 # /learn
 
-Close the learning loop. Capture what was planned, what actually shipped, what the cycle taught, then commit and push the learning file.
+Close the learning loop.
+
+Capture what was planned, what actually shipped, what the cycle taught, and what mechanism should be preserved or changed.
+
+Do not write a learning file unless there is non-obvious content.
 
 ## Preconditions
 
 - A PR exists and normally remains open; merged PRs are acceptable only for historical capture.
-- The PR has a linked issue (via `Closes #<n>` in the body).
-- The working tree is clean before writing the learning file. If `git status --porcelain` is non-empty, stop and ask the user to commit or stash unrelated changes.
+- The PR has a linked issue via `Closes #<n>` or equivalent.
+- The working tree is clean before writing the learning file:
+
+```bash
+git status --porcelain
+```
+
+If not clean, stop and ask the user to commit or stash unrelated changes.
+
 - The current branch has a remote upstream or `origin` exists.
-- `gh` authenticated.
+- `gh` is authenticated.
 
 ## Phase 1 — Gather context
 
-Collect in parallel (one message, multiple tool calls):
+Collect in parallel:
 
-1. **Issue body and metadata.** `gh issue view <n> --json title,body,state,url`
-2. **PR metadata and diff.** `gh pr view <n> --json title,body,state,mergedAt,url` and `gh pr diff <n>`
-3. **Review threads.** The GraphQL `reviewThreads` query from `/address` — include resolved status, reviewer, body, path, line.
-4. **Git log for the branch.** `git log --oneline <base>...<head>` (or `git log --oneline origin/main..HEAD` if base is main).
+1. **Issue body and metadata**
 
-## Phase 2 — Analyze (parallel Explore agents)
+```bash
+gh issue view <n> --json number,title,body,state,url
+```
 
-Spawn three Explore agents in parallel. Give each the context bundle from Phase 1.
+2. **PR metadata and diff**
 
-- **Agent A — What actually ended up working.** Compare the issue's Architecture section with the merged code. What matches. What changed. Why. If the mermaid diagram in the issue no longer describes reality, draft the replacement diagram. Return a 150-300 word summary.
+```bash
+gh pr view <n> --json number,title,body,state,mergedAt,url,baseRefName,headRefName,headRefOid,baseRefOid
+gh pr diff <n>
+```
 
-- **Agent B — What surfaced in review.** Summarize the review threads: how many addressed, how many pushed back, how many escalated. For each pushback, state the one-line reason (usually visible in the triage commit messages or in conversation history). For each escalation, state what it changed. Return a 100-200 word summary.
+3. **Review threads**
 
-- **Agent C — Non-obvious lesson + patterns.** What would a thoughtful engineer not have known before doing this cycle? Is there a reproducible pattern worth naming? Is there a concrete one-sentence rule that belongs in `AGENTS.md`? Return the lesson (one paragraph), the pattern (3-5 lines or `None`), and the AGENTS.md amendment candidate (one sentence with a Why: clause, or `None`).
+Use the GraphQL `reviewThreads` query from `/address` when available. Include resolved status, reviewer, body, path, line, and replies.
 
-## Phase 3 — Assemble the file
+4. **PR review comments and issue comments**
 
-Write to `docs/learnings/YYYY-MM-DD-<slug>.md` relative to the target repo's root. Use today's date from `date +%Y-%m-%d`. Slug is a kebab-case version of the issue title, trimmed to < 50 chars.
+```bash
+gh api repos/{owner}/{repo}/pulls/<n>/comments --paginate
+gh api repos/{owner}/{repo}/issues/<n>/comments --paginate
+```
+
+5. **Git log for the branch**
+
+```bash
+git log --oneline <base>...<head>
+```
+
+or:
+
+```bash
+git log --oneline origin/main..HEAD
+```
+
+when base is main and branch comparison is clear.
+
+6. **Existing learning files**
+
+Read `docs/learnings/` if it exists.
+
+## Phase 2 — Analyze with parallel Explore agents
+
+Spawn four Explore agents in parallel. Give each the context bundle from Phase 1.
+
+### Agent A — What actually ended up working
+
+Compare the issue’s Architecture section with the final code.
+
+Report what matches, what changed, why it changed, whether the mermaid diagram still describes reality, and replacement diagram if needed.
+
+Return 150–300 words.
+
+### Agent B — What surfaced in review
+
+Summarize review threads: how many addressed, pushed back, escalated; recurring categories; which comments changed the final design. For each pushback, state the one-line reason.
+
+Return 100–200 words.
+
+### Agent C — Non-obvious lesson and pattern
+
+Find what a thoughtful engineer would not have known before doing this cycle.
+
+Report:
+
+- the non-obvious lesson
+- reproducible pattern, if any
+- one-sentence AGENTS.md amendment candidate, if any
+
+Return:
+
+```markdown
+Lesson:
+<paragraph>
+
+Pattern:
+<3-5 lines or None>
+
+AGENTS.md amendment candidate:
+<one sentence with Why: clause, or None>
+```
+
+### Agent D — First-principles and game-theory postmortem
+
+Analyze the cycle as a mechanism.
+
+Report:
+
+- what invariant mattered most
+- what assumption changed
+- what local incentive caused friction
+- what mechanism improved alignment
+- what information was missing early
+- what bad equilibrium was avoided or discovered
+- what future review should check sooner
+
+Return 150–250 words.
+
+## Phase 3 — Decide whether to write
+
+Do not create a learning file if all agents conclude:
+
+- everything went as architected
+- no review finding changed the result
+- no non-obvious lesson emerged
+- no durable mechanism/incentive lesson exists
+
+If no file is warranted, say so and stop without committing.
+
+## Phase 4 — Assemble the file
+
+Write to:
+
+```text
+docs/learnings/YYYY-MM-DD-<slug>.md
+```
+
+Use today’s date from:
+
+```bash
+date +%Y-%m-%d
+```
+
+Slug is a kebab-case version of the issue title, trimmed to fewer than 50 characters.
 
 If `docs/learnings/` does not exist, create it.
+
+If the PR is not yet merged, prefix the `type` frontmatter value with `in-flight-`.
 
 File contents:
 
 ```markdown
 ---
 date: YYYY-MM-DD
-type: bug | feature | refactor | decision
+type: bug | feature | refactor | decision | in-flight-bug | in-flight-feature | in-flight-refactor | in-flight-decision
 topic: <one-line from issue title>
 issue: <issue url>
 pr: <pr url>
@@ -59,11 +179,19 @@ pr: <pr url>
 
 ## What actually ended up working
 
-<Output from Agent A. Include the updated mermaid diagram if the architecture shifted.>
+<Output from Agent A. Include updated mermaid diagram if the architecture shifted.>
 
 ## What surfaced in review
 
 <Output from Agent B.>
+
+## First-principles postmortem
+
+<What invariant mattered, what assumption changed, what source of truth or primitive concept became clearer.>
+
+## Game-theory postmortem
+
+<What players/incentives/information asymmetries mattered. What mechanism aligned behavior. What bad equilibrium was avoided or discovered.>
 
 ## Non-obvious lesson
 
@@ -80,19 +208,50 @@ pr: <pr url>
 This is a proposal. Review and edit AGENTS.md yourself if you want to adopt it — `/learn` never auto-edits AGENTS.md.
 ```
 
-## Phase 4 — Commit and push
+## Phase 5 — Commit and push
 
 After writing the file:
 
-1. Stage only the learning file: `git add -- docs/learnings/YYYY-MM-DD-<slug>.md`.
-2. Commit it: `git commit -m "docs: capture learning for #<issue>"`.
-3. Push the current branch: `git push` if an upstream exists, otherwise `git push -u origin "$(git branch --show-current)"`.
+1. Stage only the learning file:
 
-Do not include unrelated files in the commit. If the commit or push fails, surface the exact error and stop.
+```bash
+git add -- docs/learnings/YYYY-MM-DD-<slug>.md
+```
+
+2. Commit it:
+
+```bash
+git commit -m "docs: capture learning for #<issue>"
+```
+
+3. Push the current branch:
+
+```bash
+git push
+```
+
+If no upstream exists:
+
+```bash
+git push -u origin "$(git branch --show-current)"
+```
+
+Do not include unrelated files in the commit.
+
+If the commit or push fails, surface the exact error and stop.
 
 ## Output
 
-Print the path to the written file and the pushed commit SHA. Then:
+Print:
+
+```text
+learning_file=<path>
+commit=<sha>
+lesson=<one-line durable lesson>
+mechanism=<one-line mechanism/incentive lesson>
+```
+
+Then:
 
 - If the PR is open, end with exactly this line and stop:
 
@@ -104,9 +263,13 @@ Print the path to the written file and the pushed commit SHA. Then:
 
 ## Rules
 
-- Do not write the file if Agent A, B, or C failed to produce content — surface the failure and stop.
-- Do not auto-apply AGENTS.md amendments. The candidate is a proposal only.
-- If the PR is not yet merged, prefix the `type` frontmatter value with `in-flight-` (e.g., `in-flight-feature`). This flags the learning as tentative — the real outcome isn't locked yet.
-- Do not create a learning file if the issue/PR carries no non-obvious content. If all three agents return "nothing surprising, everything went as architected," say that and stop without writing the file — tell the user there's nothing durable to capture here.
+- Do not write the file if Agent A, B, C, or D failed to produce content.
+- Do not auto-apply AGENTS.md amendments.
+- Do not create a learning file if the issue/PR carries no non-obvious content.
 - Never commit if no learning file was written.
 - Never commit unrelated working tree changes.
+- Preserve the difference between:
+  - what was planned
+  - what shipped
+  - what was learned
+  - what mechanism should change
