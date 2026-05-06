@@ -1,16 +1,11 @@
 ---
 name: incident
-description: Production-pressure entry point. Contain first (rollback / feature flag off / disable), communicate, then hand off to /debug for root-cause when the fire is out. Distinct from /debug, which is reproduce-first and assumes calm. Use when production is degraded right now and speed of mitigation matters more than minimal commit hygiene.
+description: "Production-pressure entry point — alternative to /debug when the fire is hot. Use when the user types /incident, when production is degraded right now and users are affected, when an error rate is spiking, or when a deploy is known-bad. Contain first (rollback / feature flag off / disable), communicate, then hand off to /debug for root-cause when the fire is out. Distinct from /debug, which is reproduce-first and assumes calm."
 ---
 
 # /incident
 
-## First-principles rule
-
-Think from first principles before following an existing pattern: name what is true now, what must remain true, and what you want to be true, then choose the smallest action that closes the gap. Few-shot: if a task says "add a service," ask "what complexity does this hide?"; if none, do not add it. If a task says "add a fallback," ask "what failure does this mask?"; if it masks failure, model an explicit typed error or recovery path. If a task says "match the existing pattern," ask "which invariant does the pattern protect?"; keep it only if the invariant still applies.
-
-
-Production is degraded. Fire first. Investigate later.
+Production is degraded. Fire first. Investigate later. Alternative entry to the chain in `/compound-workflow`.
 
 This skill is the alternative entry point to `/debug` when the situation is hot — users affected, error rate spiking, deploy known-bad. The order of operations is the opposite of `/debug`: contain before reproduce, mitigate before understand.
 
@@ -75,3 +70,7 @@ If skipping investigation:
 If continuing to root-cause:
 
 > Incident contained. Run `/debug` to find and fix the underlying bug — the contain commit is your safety net.
+
+## Composition
+
+References: `/first-principles`, `/game-theory`, `/debug`, `/learn`, `/compound-workflow`.

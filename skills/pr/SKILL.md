@@ -1,138 +1,130 @@
 ---
 name: pr
-description: Open a pull request with a strict minimal body — Summary (2-4 sentences) plus a mermaid Flow diagram plus `Closes #<issue>`. No changes list, no tests section, no breaking-changes section. Works in dirty repos by committing only PR-relevant changes, creates a branch from trunk without asking, pushes the branch, watches GitHub Actions until they terminate, then hands off to /code-review.
+description: "Open the pull request after /example, before /code-review. Body is a strict minimal shape: Summary (2–4 sentences) + mermaid Flow diagram + `Closes #<issue>`. Watches CI until checks pass. Use when the user types /pr, when implementation/verification/docs/examples are complete and ready for review, or when an existing PR needs an update push. Writes 25-pr.md and hands off to /code-review."
 ---
 
 # /pr
 
-## First-principles rule
+Open or update the PR. The body captures intent and flow only — reviewers go to the run for design, the diff for changes, and CI for proof.
 
-Think from first principles before following an existing pattern: name what is true now, what must remain true, and what you want to be true, then choose the smallest action that closes the gap. Few-shot: if a task says "add a service," ask "what complexity does this hide?"; if none, do not add it. If a task says "add a fallback," ask "what failure does this mask?"; if it masks failure, model an explicit typed error or recovery path. If a task says "match the existing pattern," ask "which invariant does the pattern protect?"; keep it only if the invariant still applies.
+## When this fires
 
+- The user types `/pr`
+- `/verify`, `/docs`, `/example` are complete
+- A PR is the right next step (vs internal review-only)
 
-Open a pull request with a minimal, opinionated body.
+## Position in the workflow
+
+Previous: `/example`. Next: `/code-review`. See `/compound-workflow`.
 
 ## Preconditions
 
-1. **Remote exists.** `git remote get-url origin` must succeed.
-2. **`gh` authenticated.** `gh auth status` must succeed.
-3. **No unresolved conflicts.** If `git diff --name-only --diff-filter=U` prints anything, stop and tell the user to resolve conflicts first.
-4. **Dirty repos are allowed.** Do not require a clean working tree. Preserve unrelated changes by staging and committing only files that belong to this PR.
+- Branch exists and tracks (or will track) a remote
+- Implementation issue exists from `/issue`
+- Repo policy permits PRs (vs trunk-based commit)
 
-## Process
+## Stance
 
-1. Capture the starting branch and working tree state:
+Short, scannable, mermaid-only-when-it-pays-its-keep, no checklists. The PR body is for reviewers triaging at a glance; the run artifacts are for reviewers who want depth.
 
-```bash
-START_BRANCH="$(git branch --show-current)"
-git status --short
+## PR body shape
+
+```markdown
+## Summary
+
+<2 to 4 sentences from /contract and /architect: what changed, why, the core trade-off>
+
+## Flow
+
+\`\`\`mermaid
+<diagram showing the runtime or data flow that changed; only if structure cannot be conveyed in prose>
+\`\`\`
+
+Closes #<issue>
 ```
 
-2. If `START_BRANCH` is `main`, `master`, or `trunk`, create a PR branch without asking. Derive the name from the issue number when known, otherwise from the task title or timestamp:
+That is the body. No "Changes" section. No "Test plan" checklist. Reviewers see verification in CI; design in the run; changes in the diff.
 
-```bash
-git switch -c "<type>/<short-kebab-task>"
-```
+## Title
 
-Do not stash first; the working tree moves with the new branch. This keeps unrelated dirty files present but uncommitted.
+- Under 70 characters
+- Imperative ("add", "fix", "update", "refactor")
+- No ticket prefix unless repo convention requires
+- Mirrors the implementation-issue title where reasonable
 
-3. Find the linked issue number. Options, in order:
-   - If the user passed an explicit `--issue <n>` or `<n>` argument, use it.
-   - Otherwise, scan recent commit bodies (`git log -20 --format=%B`) for `Refs #<n>`, `Fixes #<n>`, or `Closes #<n>`. Use the most common match.
-   - Otherwise, scan the current branch name for an issue number.
-   - If still not found, ask the user for the issue number.
+## Procedure
 
-4. Fetch the issue title and labels: `gh issue view <n> --json title,labels`. Use them as input, not as the PR title directly.
+### 1. State check
+Run in parallel via Bash:
 
-5. Build a PR title that satisfies the repository's `pr-title` / `commitlint` rules:
-   - Format: `type(scope): subject` or `type: subject`.
-   - Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
-   - Subject must be lowercase.
-   - Subject must be at most 72 characters.
-   - Prefer the issue title's existing Conventional Commit title if it already passes.
-   - Otherwise infer the type from the issue labels, issue title, or shipped change; default to `fix` only for bug repairs and `feat` only for user-visible behavior, otherwise use `chore`.
-   - Do not include `#<issue>` in the title; the body owns `Closes #<n>`.
+- `git status` — confirm clean working tree (or stash unrelated state)
+- `git diff main...HEAD` (or repo's base branch) — sanity check
+- `gh pr list --head <branch>` — does a PR already exist?
 
-6. Validate the title before creating the PR. If the repository has commitlint installed, run it against the title from the repo root:
+### 2. Push (with `-u` if first push)
+- Confirm the branch tracks the right remote
+- Push without `--no-verify` unless the user explicitly asked
 
-```bash
-printf '%s\n' "$PR_TITLE" | bunx commitlint
-```
+### 3. Create or update
+- If no PR: `gh pr create --title <title> --body "$(cat <<'EOF' ... EOF)"`
+- If PR exists: `gh pr edit <number> --body "$(cat <<'EOF' ... EOF)"`
 
-If validation fails, fix the title and rerun validation. Do not open a PR with a title that fails `commitlint`.
+### 4. Link the implementation issue
+- `Closes #<issue>` in the body
+- If Boy Scout follow-up issues exist, link as references (not `Closes`)
 
-7. Commit only the PR-relevant changes if needed:
-   - Inspect `git status --short` and `git diff --stat`.
-   - Decide which paths belong to this PR from the user request, issue, and changes you made.
-   - Stage only those paths with explicit pathspecs: `git add -- <path>...`.
-   - Never use `git add -A`, `git add .`, or `git commit -a` in a dirty repo.
-   - Leave unrelated modified/untracked files unstaged.
-   - If there are staged PR-relevant changes, commit them with a Conventional Commit message that references the issue when available, e.g. `fix(pr): handle dirty worktrees\n\nRefs #<n>`.
-   - If there are no staged changes but the branch already has commits to push, continue.
-   - If there are no staged changes and no branch commits, stop: there is nothing to open.
+### 5. Watch CI
+- `gh pr checks --watch --fail-fast`
+- The PR is **not** complete until required checks pass
+- If a required check fails, root-cause and push the fix; do not bypass
 
-8. Build the PR body using the template in `REFERENCE.md`:
-   - `## Summary` — 2-4 sentences. What and why. Written against the issue's problem statement.
-   - `## Flow` — a mermaid `flowchart` or `sequenceDiagram` showing the runtime or user flow introduced by this PR. Required.
-   - Final line: `Closes #<n>`.
-   - **Nothing else.** No changes section, no test plan, no screenshots block, no rollout plan.
+### 6. Review-readiness
+- Confirm draft / ready state matches user intent
+- Add reviewers per repo convention if expected
 
-9. Write the body to a temp file (mermaid needs file-based --body-file, not inline).
+## Required output
 
-10. Push the branch:
+Write `<run-dir>/25-pr.md`:
 
-```bash
-git push -u origin "$(git branch --show-current)"
-```
+### 1. PR
+Number, URL, title, full body.
 
-11. Open the PR, or update the existing PR for this branch if one already exists:
+### 2. CI status
+Per required check, status and link. Final summary: all-green / failing.
 
-```bash
-if gh pr view --json number,url >/tmp/current-pr.json 2>/dev/null; then
-  gh pr edit --title "$PR_TITLE" --body-file "<tmpfile>"
-else
-  gh pr create --title "$PR_TITLE" --body-file "<tmpfile>"
-fi
-```
+### 3. Linked issues
+Implementation issue closed, Boy Scout issues referenced.
 
-Do not create duplicate PRs for the same branch.
+### 4. Open issues
+Anything captured per `/issue-capture` during the PR pass.
 
-Fallback create command:
+### 5. Handoff
+Block per `/artifact-protocol`, pointing at `/code-review`. Include PR number in `required_context`.
 
-```bash
-gh pr create --title "$PR_TITLE" --body-file "<tmpfile>"
-```
+## Rules
 
-12. Capture the PR URL. Delete the temp file.
+- Body has Summary + Flow (mermaid optional) + `Closes #<issue>`. Nothing else.
+- Title is short, imperative, under 70 chars.
+- CI must be watched until checks pass.
+- Never bypass hooks (`--no-verify`, `--no-gpg-sign`) without the user explicitly asking.
+- Never force-push without explicit user request.
+- Never push to main / master.
+- Mermaid only when prose cannot convey the structural relationship.
 
-13. **Wait for GitHub Actions.** Do not hand off until checks terminate. The PR is not complete until all checks pass.
+## Anti-patterns
 
-```bash
-gh pr checks "<pr-number>" --watch --fail-fast
-```
+- "Changes" or "Test plan" sections in the body — reviewers do not need them; the run and CI provide them.
+- Long emoji-laden summary.
+- Title that restates the issue verbatim including ticket prefixes.
+- Pushing and walking away without watching CI.
+- Force-push to overwrite review history.
 
-- `--watch` blocks until every check finishes (success, failure, cancelled, or skipped).
-- `--fail-fast` returns non-zero the moment any check fails, so you surface failures promptly instead of waiting for the rest.
-- If `gh pr checks` returns "no checks reported on the <branch> branch", there are no workflows — treat this as a pass and continue.
-- If any check fails, stop and surface:
-  1. The failing check name(s).
-  2. The last ~30 lines of the failing job log via `gh run view <run-id> --log-failed` (find `run-id` with `gh pr checks <n> --json link -q '.[]|select(.state=="FAILURE")|.link'`).
-  3. Tell the user: *"CI failed. Address the failure before running `/code-review` — either fix the underlying bug in this branch, or if the failure is unrelated infra, explicitly say so and I will proceed."*
-- Do not retry failing checks automatically. Do not approve, dismiss, or close the PR.
+## Composition
 
-## Forbidden sections (do not add these even if the user asks offhand)
+References: `/issue`, `/verify`, `/docs`, `/example`, `/artifact-protocol`, `/issue-capture`, `/compound-workflow`. Tooling: `gh`, `git`.
 
-- "Changes" / "Files changed" — the diff is visible; do not enumerate it.
-- "Tests" / "Test plan" — verification lives in the issue.
-- "How to verify" / "Screenshots" — out of this body's scope.
-- "Breaking changes" — if there are any, mention them in the Summary prose.
-- "Checklist" — no ceremony.
-- Emoji headers.
+## Final response
 
-## Output
+End with exactly:
 
-Print the PR URL and the final CI status (all-pass / none-configured / failed). Only proceed to the handoff when CI has terminated cleanly (all-pass or no-checks). If CI failed, do NOT print the handoff — print the failure summary and stop.
-
-On success, end with exactly this line and stop:
-
-> PR opened: <url>. CI green. Run `/code-review` to fan out reviewers and post findings to the PR.
+> PR ready. Continue to `/code-review`.

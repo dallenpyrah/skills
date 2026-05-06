@@ -1,14 +1,9 @@
 ---
 name: teach
-description: Teach Dallen a concept, solution, or pattern using his learning style — story → problem → simple version → core principle → examples → precision → wrong-vs-right model → check. Use when Dallen says /teach, asks to learn/understand/study a concept, or asks to be taught the solution you just proposed (architecture, bug fix, design, library behavior).
+description: "Teach Dallen a concept, solution, or pattern in his preferred shape — story → problem → simple version → core principle → examples → precision → wrong-vs-right model → check. Use when the user types /teach, asks to learn/understand/study a concept, asks to be taught the solution just proposed (architecture, bug fix, design, library behavior), or says 'walk me through this'. Renders one screen using the dallen-learning-style profile."
 ---
 
 # /teach
-
-## First-principles rule
-
-Think from first principles before following an existing pattern: name what is true now, what must remain true, and what you want to be true, then choose the smallest action that closes the gap. Few-shot: if a task says "add a service," ask "what complexity does this hide?"; if none, do not add it. If a task says "add a fallback," ask "what failure does this mask?"; if it masks failure, model an explicit typed error or recovery path. If a task says "match the existing pattern," ask "which invariant does the pattern protect?"; keep it only if the invariant still applies.
-
 
 Teach a specific concept using the `dallen-learning-style` profile. That profile owns the *how*. This skill picks the target, grounds it, and renders the template.
 
@@ -81,3 +76,7 @@ Output uses these verbatim headings, in this order. One screen. Plain English be
 The rendered explanation is the output. End with exactly this line and stop:
 
 > Teach delivered. Answer the check questions, or ask for the next layer.
+
+## Composition
+
+References: `/first-principles`, `/research-bibliography` (for citation links when teaching design topics).

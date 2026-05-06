@@ -1,275 +1,144 @@
 ---
 name: learn
-description: Capture the post-mortem for a compound-engineering cycle. Reads the issue, PR, review comments, git log, and final diff. Extracts what worked, what changed, what incentives caused friction, what mechanisms improved code health, and what durable rule should be considered. Writes docs/learnings/YYYY-MM-DD-slug.md, commits it, pushes the branch, and hands off to /merge when the PR is still open.
+description: "Capture the post-mortem after /address, before /merge. Reads the issue, PR, review comments, run artifacts, git log, and final diff; extracts what worked, what changed, what created friction, what mechanisms improved code health, and what durable rule should change. Writes the learning to docs/learnings/<date>-<slug>.md, commits, pushes, and writes 28-learn.md. Hands off to /merge while the PR is still open."
 ---
 
 # /learn
 
-Close the learning loop.
+The workflow compounds because real friction becomes durable rules. This phase captures that translation.
 
-Capture what was planned, what actually shipped, what the cycle taught, and what mechanism should be preserved or changed.
+## When this fires
 
-Do not write a learning file unless there is non-obvious content.
+- The user types `/learn`
+- `/address` is complete and the PR is still open
+- A retrospective is needed before merging
+
+## Position in the workflow
+
+Previous: `/address`. Next: `/merge`. See `/compound-workflow`.
 
 ## Preconditions
 
-- A PR exists and normally remains open; merged PRs are acceptable only for historical capture.
-- The PR has a linked issue via `Closes #<n>` or equivalent.
-- The working tree is clean before writing the learning file:
+- The PR is open
+- `<run-dir>/27-address.md` is in place
+- `gh`, `git`, and write access to `docs/learnings/` are available
 
-```bash
-git status --porcelain
-```
+## Stance
 
-If not clean, stop and ask the user to commit or stash unrelated changes.
+A learning is durable if a future agent or contributor would change a decision because of it. Apply `/first-principles` (what was the irreducible cause) and `/game-theory` (what incentive created the friction; what mechanism would fix it).
 
-- The current branch has a remote upstream or `origin` exists.
-- `gh` is authenticated.
+A learning is **not**:
 
-## Phase 1 — Gather context
+- a summary of what shipped (the PR body has that)
+- a description of what was built (the diff has that)
+- a praise piece (no one reads those)
 
-Collect in parallel:
+A learning **is**:
 
-1. **Issue body and metadata**
+- one observation
+- one general principle
+- the trigger condition that should make a future agent apply it
 
-```bash
-gh issue view <n> --json number,title,body,state,url
-```
+## Procedure
 
-2. **PR metadata and diff**
+### 1. Read the run
+- The implementation issue
+- The PR body and discussion
+- The full review (`/code-review`) and address pass (`/address`)
+- `git log <base>..<head>` for the actual change shape
+- `git diff <base>..<head>` for what materially changed
 
-```bash
-gh pr view <n> --json number,title,body,state,mergedAt,url,baseRefName,headRefName,headRefOid,baseRefOid
-gh pr diff <n>
-```
+### 2. Extract candidates
+Walk the run and surface:
 
-3. **Review threads**
+- **What worked** — design or process choices that paid off; what triggered them
+- **What changed mid-run** — design revisions, scope cuts, contract amendments, with the cause
+- **Friction sources** — review comments, CI failures, rework, missing evidence; for each, the smallest mechanism that would have prevented it
+- **Game-theoretic findings** — incentives the run exposed (good or bad)
+- **Codification candidates** — rules, doc updates, tests, lints, AGENTS amendments, skill amendments, follow-up issues
 
-Use the GraphQL `reviewThreads` query from `/address` when available. Include resolved status, reviewer, body, path, line, and replies.
-
-4. **PR review comments and issue comments**
-
-```bash
-gh api repos/{owner}/{repo}/pulls/<n>/comments --paginate
-gh api repos/{owner}/{repo}/issues/<n>/comments --paginate
-```
-
-5. **Git log for the branch**
-
-```bash
-git log --oneline <base>...<head>
-```
-
-or:
-
-```bash
-git log --oneline origin/main..HEAD
-```
-
-when base is main and branch comparison is clear.
-
-6. **Existing learning files**
-
-Read `docs/learnings/` if it exists.
-
-## Phase 2 — Analyze with parallel Explore agents
-
-Spawn four Explore agents in parallel. Give each the context bundle from Phase 1.
-
-### Agent A — What actually ended up working
-
-Compare the issue’s Architecture section with the final code.
-
-Report what matches, what changed, why it changed, whether the mermaid diagram still describes reality, and replacement diagram if needed.
-
-Return 150–300 words.
-
-### Agent B — What surfaced in review
-
-Summarize review threads: how many addressed, pushed back, escalated; recurring categories; which comments changed the final design. For each pushback, state the one-line reason.
-
-Return 100–200 words.
-
-### Agent C — Non-obvious lesson and pattern
-
-Find what a thoughtful engineer would not have known before doing this cycle.
-
-Report:
-
-- the non-obvious lesson
-- reproducible pattern, if any
-- one-sentence AGENTS.md amendment candidate, if any
-
-Return:
+### 3. Write `docs/learnings/<yyyy-mm-dd>-<slug>.md`
+Body:
 
 ```markdown
-Lesson:
-<paragraph>
+# <title>
 
-Pattern:
-<3-5 lines or None>
+## Observation
+<what happened, in one or two sentences>
 
-AGENTS.md amendment candidate:
-<one sentence with Why: clause, or None>
+## Evidence
+<commands, files, review URLs, screenshots, failures>
+
+## General principle
+<what future agents should learn>
+
+## Trigger condition
+<when this lesson applies>
+
+## Limits / counterexamples
+<when not to apply it>
+
+## Codification target
+- one of: docs/learnings, AGENTS.md, skill amendment proposal, test fixture, lint/import rule, architecture doc, issue template, example, follow-up issue
+
+## Proposed amendment or issue
+<concrete next artifact>
 ```
 
-### Agent D — First-principles and game-theory postmortem
+If the run produced multiple distinct lessons, write one file per lesson.
 
-Analyze the cycle as a mechanism.
+### 4. Capture follow-up issues
+For each codification candidate that needs work beyond writing the learning:
 
-Report:
+- file an issue per `/issue-capture`
+- link it to the PR and the learning file
 
-- what invariant mattered most
-- what assumption changed
-- what local incentive caused friction
-- what mechanism improved alignment
-- what information was missing early
-- what bad equilibrium was avoided or discovered
-- what future review should check sooner
+### 5. Commit and push
+- Commit `docs/learnings/<file>.md` with a message that references the implementation issue
+- Push to the PR branch (so reviewers see the learning before merge)
 
-Return 150–250 words.
+## Required output
 
-## Phase 3 — Decide whether to write
+Write `<run-dir>/28-learn.md`:
 
-Do not create a learning file if all agents conclude:
+### 1. Learning files written
+Path, title, codification target.
 
-- everything went as architected
-- no review finding changed the result
-- no non-obvious lesson emerged
-- no durable mechanism/incentive lesson exists
+### 2. Follow-up issues filed
+Per issue, link and codification target.
 
-If no file is warranted, say so and stop without committing.
+### 3. AGENTS / skill amendment proposals
+If the lesson should change a global rule, the proposed diff.
 
-## Phase 4 — Assemble the file
+### 4. Commit and push
+SHA and branch state.
 
-Write to:
-
-```text
-docs/learnings/YYYY-MM-DD-<slug>.md
-```
-
-Use today’s date from:
-
-```bash
-date +%Y-%m-%d
-```
-
-Slug is a kebab-case version of the issue title, trimmed to fewer than 50 characters.
-
-If `docs/learnings/` does not exist, create it.
-
-If the PR is not yet merged, prefix the `type` frontmatter value with `in-flight-`.
-
-File contents:
-
-```markdown
----
-date: YYYY-MM-DD
-type: bug | feature | refactor | decision | in-flight-bug | in-flight-feature | in-flight-refactor | in-flight-decision
-topic: <one-line from issue title>
-issue: <issue url>
-pr: <pr url>
----
-
-# <topic>
-
-## What we set out to do
-
-<One paragraph. Pulled from issue Problem + Architecture.>
-
-## What actually ended up working
-
-<Output from Agent A. Include updated mermaid diagram if the architecture shifted.>
-
-## What surfaced in review
-
-<Output from Agent B.>
-
-## First-principles postmortem
-
-<What invariant mattered, what assumption changed, what source of truth or primitive concept became clearer.>
-
-## Game-theory postmortem
-
-<What players/incentives/information asymmetries mattered. What mechanism aligned behavior. What bad equilibrium was avoided or discovered.>
-
-## Non-obvious lesson
-
-<Output from Agent C — the lesson paragraph.>
-
-## Reproducible pattern (if any)
-
-<Output from Agent C — the pattern section, or "None" if no pattern emerged.>
-
-## AGENTS.md amendment candidate (if any)
-
-<Output from Agent C — the amendment candidate, or "None" if no durable rule emerged.>
-
-This is a proposal. Review and edit AGENTS.md yourself if you want to adopt it — `/learn` never auto-edits AGENTS.md.
-```
-
-## Phase 5 — Commit and push
-
-After writing the file:
-
-1. Stage only the learning file:
-
-```bash
-git add -- docs/learnings/YYYY-MM-DD-<slug>.md
-```
-
-2. Commit it:
-
-```bash
-git commit -m "docs: capture learning for #<issue>"
-```
-
-3. Push the current branch:
-
-```bash
-git push
-```
-
-If no upstream exists:
-
-```bash
-git push -u origin "$(git branch --show-current)"
-```
-
-Do not include unrelated files in the commit.
-
-If the commit or push fails, surface the exact error and stop.
-
-## Output
-
-Print:
-
-```text
-learning_file=<path>
-commit=<sha>
-lesson=<one-line durable lesson>
-mechanism=<one-line mechanism/incentive lesson>
-```
-
-Then:
-
-- If the PR is open, end with exactly this line and stop:
-
-> Cycle captured at <path> in <sha>. Run `/merge` to merge the PR and clean up the branch.
-
-- If the PR is already merged or closed, end with exactly this line and stop:
-
-> Cycle captured at <path> in <sha>. Loop complete.
+### 5. Handoff
+Block per `/artifact-protocol`, pointing at `/merge`.
 
 ## Rules
 
-- Do not write the file if Agent A, B, C, or D failed to produce content.
-- Do not auto-apply AGENTS.md amendments.
-- Do not create a learning file if the issue/PR carries no non-obvious content.
-- Never commit if no learning file was written.
-- Never commit unrelated working tree changes.
-- Preserve the difference between:
-  - what was planned
-  - what shipped
-  - what was learned
-  - what mechanism should change
+- One learning per file; one principle per learning.
+- Trigger condition is concrete enough that a future agent recognizes it.
+- Codification target is named explicitly.
+- Learning is committed and pushed before `/merge`.
+- AGENTS / skill amendments are proposals, not silent edits.
+- "We learned a lot" is not a learning.
+
+## Anti-patterns
+
+- Generic platitudes ("be careful with concurrency").
+- Praise without principle.
+- Codifying a one-off as a global rule.
+- Skipping the learning when nothing felt new — there is always one mechanism worth naming.
+- Writing the learning after merge (the PR loses the link).
+
+## Composition
+
+References: `/issue-capture`, `/artifact-protocol`, `/compound-workflow`, `/first-principles`, `/game-theory`. Tooling: `gh`, `git`.
+
+## Final response
+
+End with exactly:
+
+> Learning recorded. Continue to `/merge`.
