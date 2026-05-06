@@ -1,9 +1,14 @@
 ---
 name: improve-architecture
-description: "Explore a codebase to find opportunities for architectural improvement, focusing on making the codebase more testable by deepening shallow modules. Use when the user types /improve-architecture, asks to find refactoring opportunities, asks to consolidate tightly-coupled modules, or asks to make a codebase more AI-navigable. Surfaces shallow-module friction; proposes module-deepening RFCs as GitHub issues."
+description: Explore a codebase to find opportunities for architectural improvement, focusing on making the codebase more testable by deepening shallow modules. Use when user wants to improve architecture, find refactoring opportunities, consolidate tightly-coupled modules, or make a codebase more AI-navigable.
 ---
 
 # Improve Codebase Architecture
+
+## First-principles rule
+
+Think from first principles before following an existing pattern: name what is true now, what must remain true, and what you want to be true, then choose the smallest action that closes the gap. Few-shot: if a task says "add a service," ask "what complexity does this hide?"; if none, do not add it. If a task says "add a fallback," ask "what failure does this mask?"; if it masks failure, model an explicit typed error or recovery path. If a task says "match the existing pattern," ask "which invariant does the pattern protect?"; keep it only if the invariant still applies.
+
 
 Explore a codebase like an AI would, surface architectural friction, discover opportunities for improving testability, and propose module-deepening refactors as GitHub issue RFCs.
 
@@ -74,7 +79,3 @@ After comparing, give your own recommendation: which design you think is stronge
 ### 7. Create GitHub issue
 
 Create a refactor RFC as a GitHub issue using `gh issue create`. Use the template in [REFERENCE.md](REFERENCE.md). Do NOT ask the user to review before creating — just create it and share the URL.
-
-## Composition
-
-References: `/first-principles` (deep-modules principle), `/game-theory` (incentive analysis of why modules went shallow), `/core-field-guides` (Boundaries, Refactoring), `/architect`, `/refactor`, `/research-bibliography` (Ousterhout, Parnas).

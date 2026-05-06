@@ -1,129 +1,75 @@
 ---
 name: work
-description: "Implement a scoped GitHub issue on the current branch after /issue, before /verify. Reads the issue and run artifacts, derives tasks from /architect modules, commits referencing the issue number, captures discovered issues, and stops if a design assumption is invalidated. Use when the user types /work, when an issue is locked and code needs to be written, or when implementation has stalled. Writes 21-work.md and hands off to /verify."
+description: Execute the architecture in a GitHub issue on the current branch. Reads the issue, derives tasks from the Modules section, commits referencing the issue number. Refuses to run on main/master/trunk without explicit confirmation. No worktrees, no new branches. Hands off to /pr.
 ---
 
 # /work
 
-Execute the locked design on the current branch. The issue is the contract; the run artifacts are the rationale. The code is what proves both.
+## First-principles rule
 
-## When this fires
+Think from first principles before following an existing pattern: name what is true now, what must remain true, and what you want to be true, then choose the smallest action that closes the gap. Few-shot: if a task says "add a service," ask "what complexity does this hide?"; if none, do not add it. If a task says "add a fallback," ask "what failure does this mask?"; if it masks failure, model an explicit typed error or recovery path. If a task says "match the existing pattern," ask "which invariant does the pattern protect?"; keep it only if the invariant still applies.
 
-- The user types `/work`
-- The implementation issue from `/issue` exists and is the active scope
-- Code needs to be written or extended on the current branch
 
-## Position in the workflow
+Execute the architecture from a GitHub issue. Stay on the current branch.
 
-Previous: `/issue`. Next: `/verify`. See `/compound-workflow`.
+Usage: `/work <issue#>` (e.g., `/work 42`).
 
-## Preconditions
+## Preconditions (hard, fail fast)
 
-- The implementation issue exists and is referenced
-- `<run-dir>/05-architect.md` and `<run-dir>/18-test-plan.md` are present
-- The current branch is **not** main / master / trunk (refuse to run on trunk without explicit user confirmation)
-- The working tree's modifications are intentional (commit or stash any unrelated dirty state first)
+1. **Issue exists and has an architecture body.** Run `gh issue view <n> --json title,body,url,state`. If not found or the body does not contain the Problem / Architecture / Modules sections, abort and tell the user to run `/issue` first.
+2. **Working tree is clean** OR the user has explicitly confirmed uncommitted changes are intentional. If dirty and unconfirmed, run `git status` and ask once.
+3. **Current branch is safe.** Get the branch with `git branch --show-current`. If it is `main`, `master`, or `trunk`, stop and ask: *"You are on `<branch>`. Work commits will land directly on this branch. Confirm to proceed, or switch branches first."* Only proceed on explicit confirmation.
 
-## Stance
+## Process
 
-Implement the smallest mechanism that satisfies the contract. No worktrees, no new branches unless explicitly approved. Commits are small and reference `#<issue>`. If a design assumption is invalidated mid-implementation, **stop** and route to the responsible phase (do not paper over).
+1. Load the issue body. Parse the Modules section. Each module row becomes one task.
+2. `TaskCreate` one task per module, in order. Set the first to `in_progress`.
+3. Execute tasks serially — one at a time. Use Read/Edit/Write directly, or delegate to subagents for contained sub-problems. Do NOT run tasks in parallel in v1.
+4. For each task: implement → verify (type-check, lint, or tightest feedback loop available) → commit.
+5. Commit messages follow this shape:
 
-## Procedure
+```
+<type>: <one-line summary>
 
-### 1. Load context
-- Read the implementation issue
-- Read `05-architect.md`, `09-state-model.md`, `10-interface.md`, `13-security.md`, `14-performance.md`, `15-observability.md`, `18-test-plan.md`
-- Confirm the branch and working-tree state
+Refs #<issue>
+```
 
-### 2. Derive tasks from modules
-For each module named in `/architect`:
+Type is one of `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. One logical change per commit.
 
-- task: implement public surface (per `/interface`)
-- task: implement state machine (per `/state-model`)
-- task: implement port and adapter (per `/architect`, `/boundary`)
-- task: emit observability signals (per `/observability`)
-- task: write tests named in `/test-plan`
+6. If the architecture's mermaid diagram must change during execution (e.g., a module boundary shifted because reality pushed back), edit the issue body:
 
-Tasks are tracked in conversation, not in the issue body. (The issue is the design contract, not a checklist.)
+```bash
+BODY_FILE="$(mktemp -t issue-body-XXXXXX.md)"
+gh issue view <n> --json body -q .body > "$BODY_FILE"
+# edit the mermaid block in $BODY_FILE
+gh issue edit <n> --body-file "$BODY_FILE"
+rm "$BODY_FILE"
+```
 
-### 3. Implement in small commits
-- One concept per commit
-- Commit message references `#<issue>`
-- Structure changes and behavior changes never share a commit
-- Tests for the change land in the same commit (or the commit immediately before)
+Note the reason in the body of the commit that introduced the mid-flight change.
 
-### 4. Run the verification commands as you go
-Run the relevant subset of `/test-plan` verification commands during implementation:
+7. Mark each task `completed` as it lands. Do not batch.
 
-- type-check after every public-surface change
-- unit/property tests for the module under change
-- lint
-- build (when build correctness is in scope)
+## Grounding
 
-If a command fails, stop and read the failure. Do not retry blindly.
+If a task requires knowing something about a library, API, or codebase pattern you're not certain of, ground before coding (context7, gh_grep, ast-grep, Read). Never guess a signature.
 
-### 5. Capture discovered issues
-Anything surfaced during implementation that is unrelated to the current scope goes through `/issue-capture`. Do not let the run sprawl.
+## When execution uncovers something unexpected
 
-### 6. Stop conditions
-Stop and route back to an earlier phase when:
+If a task reveals that the architecture is wrong (not just imprecise — actually wrong), stop. Present the discovery to the user. Options:
+- Amend the architecture in the issue body and continue.
+- Abort work, go back to `/architect` or `/interview`.
 
-- A contract invariant cannot be enforced as designed → `/architect`
-- A state machine has a transition the design did not anticipate → `/state-model`
-- A boundary requires a new public surface → `/interface`
-- A concurrency / security / performance assumption is wrong → the responsible cross-cutting phase
-- The user changes intent → `/interview`
+Do NOT silently diverge from the issue.
 
-## Required output
+## Output
 
-Write `<run-dir>/21-work.md`:
+When all tasks are complete:
 
-### 1. Issue and branch
-- Issue number and URL
-- Branch name and commit log (range from before to current HEAD)
+1. Run `git status` to confirm the tree is clean.
+2. Run `git log --oneline origin/main..HEAD` (or the appropriate base) to show the commit list.
+3. Print a one-line summary.
 
-### 2. Tasks completed
-Per module / surface, what was implemented, with commit references.
+Then end with exactly this line and stop:
 
-### 3. Tests added
-Per test from `/test-plan`, the path and the commit that added it.
-
-### 4. Deviations from design
-If implementation revealed something the design missed, name it and which earlier phase it routes to.
-
-### 5. Discovered issues
-Captured per `/issue-capture`.
-
-### 6. Verification commands run during work
-The subset of `/test-plan` commands run, with last-result status. (The full verification pass happens in `/verify`.)
-
-### 7. Handoff
-Block per `/artifact-protocol`, pointing at `/verify`.
-
-## Rules
-
-- Refuse to run on `main` / `master` / `trunk` without explicit user confirmation.
-- No worktrees, no new branches unless explicitly approved.
-- Each commit is small and references the issue.
-- Structure and behavior never bundled.
-- Failing verification commands stop the work; do not paper over.
-- Discovered issues go to `/issue-capture`, not into this run.
-- If design assumptions break, stop and route back.
-
-## Anti-patterns
-
-- "Big bang" commits that span multiple concerns.
-- Skipping the test for the failure path because the happy path passes.
-- Adding scope mid-implementation without going back to `/contract`.
-- Using `--no-verify` to bypass hooks.
-- Force-push or destructive git operations without explicit user request.
-
-## Composition
-
-References: `/architect`, `/state-model`, `/interface`, `/concurrency`, `/security`, `/performance`, `/observability`, `/test-plan`, `/artifact-protocol`, `/issue-capture`, `/compound-workflow`.
-
-## Final response
-
-End with exactly:
-
-> Implementation in place. Continue to `/verify`.
+> Work complete. Run `/pr` to open a pull request.

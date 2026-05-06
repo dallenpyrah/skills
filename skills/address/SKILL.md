@@ -1,124 +1,174 @@
 ---
 name: address
-description: "Triage and execute on PR review comments after /code-review, before /learn. Each comment becomes Address / Push-back / Escalate / Follow-up. Push-back must cite a specific principle. Address produces a code change and silent thread resolution. Watches CI after push. Use when the user types /address, when review comments need to be worked through, or when CI is failing after review fixes. Writes 27-address.md and hands off to /learn."
+description: Work through review comments on the current PR. Triages each comment as Address / Push-back / Escalate and executes immediately — no approval gate. Addressed comments produce code changes, commits, and silent thread resolution via GraphQL (no reply text). Pushed-back comments stay unresolved. Escalations invoke /interview or /architect inline. Watches GitHub Actions after push — the loop is not complete until all checks pass.
 ---
 
 # /address
 
-Work through review comments. Triage runs autonomously: print the table for transparency, then execute. The user can interrupt; silence is consent.
+## First-principles rule
 
-## When this fires
+Think from first principles before following an existing pattern: name what is true now, what must remain true, and what you want to be true, then choose the smallest action that closes the gap. Few-shot: if a task says "add a service," ask "what complexity does this hide?"; if none, do not add it. If a task says "add a fallback," ask "what failure does this mask?"; if it masks failure, model an explicit typed error or recovery path. If a task says "match the existing pattern," ask "which invariant does the pattern protect?"; keep it only if the invariant still applies.
 
-- The user types `/address`
-- A `/code-review` produced comments, or human reviewers commented on the PR
-- CI is failing after a review fix push and needs to go green again
 
-## Position in the workflow
-
-Previous: `/code-review`. Next: `/learn`. See `/compound-workflow`.
+Work through pull-request review comments. You are empowered to push back on any comment — from `/code-review`, from humans, from anyone — when it conflicts with the locked architecture or AGENTS.md principles. **Autonomous: decide the triage, print it for transparency, execute immediately.** No approval gate.
 
 ## Preconditions
 
-- The PR has comments to address (`gh pr view <number> --json reviews,comments`)
-- The branch is the PR's head and the working tree is clean
+- A PR must exist for the current branch.
+- `gh` authenticated.
+- Working tree clean — uncommitted changes would confuse the commit-per-comment flow. If dirty, tell the user to commit or stash and stop.
 
-## Stance
+## Phase A — Load
 
-Apply `/first-principles` and `/game-theory`: most comments are right; some are wrong; pushback requires a citable reason. Without a citation, the verdict becomes Address. The loop is not complete until CI is green again.
+Resolve repo owner/name once:
 
-## Triage verdicts
+```bash
+REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
+PR="$(gh pr view --json number -q .number)"
+```
 
-For each comment, pick exactly one:
+Fetch all review threads with their resolved state and node IDs (needed for GraphQL resolve):
 
-- **Address** — code changes. Default verdict.
-- **Push-back** — explain why no change. **Must cite** a specific principle (locked architecture artifact, AGENTS.md rule, issue scope, contract non-goal). Without a citation, becomes Address.
-- **Escalate** — comment surfaces something non-trivial (architecture revision, contract revision, security re-think). Invokes `/interview` or `/architect` inline before continuing.
-- **Follow-up** — valid concern but out of scope; captured per `/issue-capture` with link.
+```bash
+gh api graphql -F owner="${REPO%/*}" -F name="${REPO#*/}" -F number="$PR" -f query='
+query($owner:String!,$name:String!,$number:Int!){
+  repository(owner:$owner,name:$name){
+    pullRequest(number:$number){
+      reviewThreads(first:100){
+        nodes{
+          id
+          isResolved
+          path
+          line
+          comments(first:50){
+            nodes{ id body author{login} url }
+          }
+        }
+      }
+    }
+  }
+}'
+```
 
-## Procedure
+Also fetch general PR comments (issue-level, not tied to a line):
 
-### 1. Print the triage table
-| # | Comment | Verdict | Reason / fix |
-|---|---|---|---|
+```bash
+gh api "repos/${REPO}/issues/${PR}/comments"
+```
 
-The table goes to the user before execution. The user can interrupt to override.
+Build one working list: `[{thread_id, reviewer, file, line, body, url, is_resolved}]`. Skip threads where `isResolved = true`.
 
-### 2. Execute Address verdicts
-- Smallest commit per concern
-- Reference the comment URL in the commit message
-- Tests pass before pushing
+## Phase B — Triage (autonomous)
 
-### 3. Execute Escalate verdicts
-- Pause execution
-- Invoke `/interview` or `/architect` inline as appropriate
-- Resume only after the design question is locked
+For each unresolved comment, decide one of:
 
-### 4. Resolve threads
-- Resolve Address threads silently via GraphQL `resolveReviewThread` (no reply text)
-- Push-back threads stay unresolved until the human reviewer agrees or the verdict flips
-- Follow-up threads are resolved with a link to the captured issue
+- **Address** — the comment is valid and aligned with the locked architecture. The code should change.
+- **Push back** — the comment conflicts with the locked architecture / the issue's goal / AGENTS.md principles. The code should NOT change for this comment. No reply will be posted; the thread stays visibly unresolved.
+- **Escalate** — the comment surfaces something non-trivial that requires re-thinking. Examples: questions the core problem framing, suggests a fundamentally different module boundary, exposes an assumption that was never pressure-tested.
 
-### 5. Push and watch CI
-- Push the address commits
-- `gh pr checks --watch --fail-fast`
-- The loop is not complete until CI is green
-- If CI fails on a fix, root-cause; do not retry blindly
+Present the triage to the user as a table:
 
-### 6. Loop
-If new comments arrive during the address pass, loop back to step 1.
+```
+#   Reviewer         Verdict      File:Line              One-line reason
+1   kieran           Address      src/foo.ts:42          Missing null check on optional arg
+2   automated        Push back    src/bar.ts:17          Suggests shallow wrapper; architecture deliberately avoids
+3   reviewer-bot     Escalate     src/baz.ts:9           Challenges the module boundary — needs /architect pass
+...
+```
 
-## Required output
+Print the table, then proceed straight to Phase C / D. **Do not stop for approval.** The user can interrupt if they disagree — silence is consent.
 
-Write `<run-dir>/27-address.md`:
+For every Push-back row, the one-line reason must cite the specific principle / architecture decision / AGENTS.md rule the comment conflicts with. Pushback is a public, durable signal; it has to be defensible without you in the room.
 
-### 1. Triage table
-The full table with verdict and reason per comment.
+## Phase C — Escalate
 
-### 2. Commits made
-Per Address verdict, the commit SHA and one-line summary.
+For any comment marked Escalate, handle inline before executing the others:
 
-### 3. Escalations
-Per Escalate verdict, which skill was invoked and the outcome.
+- If the comment is a problem-shape question → invoke the `/interview` skill with the comment body as the starting context.
+- If the comment is an architecture question → invoke the `/architect` skill with the comment body as context, then run `/review`.
 
-### 4. Pushbacks
-Per Push-back, the citation and the reviewer's response (if any).
+The output of an escalation may change the locked architecture. If it does:
+1. Update the linked issue body via `gh issue edit`.
+2. Re-triage all comments in light of the new architecture — some previously-Address comments may become Push-back, and vice versa.
+3. Print the updated triage table and continue executing. No approval gate.
 
-### 5. Follow-up issues
-Per Follow-up, the captured issue link.
+## Phase D — Execute (for Address comments)
 
-### 6. CI status
-Final state of required checks.
+For each comment marked Address, in order:
 
-### 7. Open threads
-Any threads still unresolved and why.
+1. Read the file at the line.
+2. Make the minimal code change that addresses the finding.
+3. Run the tightest available verification loop (type-check, tests for the changed file). If verification fails, stop and surface the failure to the user — do not silently skip.
+4. Commit:
 
-### 8. Handoff
-Block per `/artifact-protocol`, pointing at `/learn`.
+```
+review: <one-line summary of what changed>
+
+Addresses <thread-url>
+```
+
+One commit per addressed comment. Do not batch.
+
+## Phase E — Push & resolve
+
+1. Push the new commits:
+
+```bash
+git push
+```
+
+2. For each successfully Addressed thread, resolve it silently via GraphQL. **No reply body.**
+
+```bash
+gh api graphql -F threadId="<thread_node_id>" -f query='
+mutation($threadId:ID!){
+  resolveReviewThread(input:{threadId:$threadId}){
+    thread{ isResolved }
+  }
+}'
+```
+
+Verify `isResolved: true` in the response.
+
+3. For each Push-back thread: do **nothing**. No reply. No resolve. The thread stays unresolved — the reviewer can see Claude did not take the suggestion and can follow up if they want to escalate.
+
+## Phase F — Wait for GitHub Actions
+
+After the push, do not hand off until CI terminates. The address loop is not complete until all checks pass.
+
+```bash
+gh pr checks "${PR}" --watch --fail-fast
+```
+
+- `--watch` blocks until every check finishes. `--fail-fast` exits on the first failure.
+- If `gh pr checks` reports "no checks reported on the <branch> branch", treat as pass and continue.
+- If any check fails:
+  1. Identify the failing check(s) via `gh pr checks "${PR}" --json name,state,link -q '.[]|select(.state=="FAILURE")'`.
+  2. Pull the last failed job log: `gh run view <run-id> --log-failed`.
+  3. Decide whether the failure is caused by one of the addressed commits or is unrelated.
+  4. If caused by an addressed commit: treat it like a new review comment — make a fix commit, push, and loop back to Phase E (re-resolve affected threads, re-watch CI).
+  5. If unrelated infra: surface to the user, do not auto-fix, and do not post the handoff line. Tell the user: *"CI failed on an unrelated check (`<name>`). Resolve manually or re-run. Do not advance to `/learn` until CI is green."*
+
+Do not retry checks automatically. Do not close the PR.
+
+## Output
+
+Print a summary:
+- `<X>` comments addressed and resolved
+- `<Y>` comments pushed back (unresolved)
+- `<Z>` comments escalated (with note on architecture change, if any)
+
+If CI failed, do NOT print the handoff line — print the CI failure summary and stop.
+
+On success (all checks green or no checks configured), end with exactly this line and stop:
+
+> Comments addressed. CI green. Run `/code-review` again if more rounds are needed, or `/learn` to close the loop.
 
 ## Rules
 
-- Default to Address.
-- Push-back requires a specific citable principle.
-- Escalations stop the address loop and invoke the right skill inline.
-- Threads resolve silently; no reply text.
-- CI must be watched until green; do not bypass hooks.
-- The loop is autonomous; the user interrupts if needed.
-
-## Anti-patterns
-
-- "I disagree" without a cited principle.
-- Bundling unrelated fixes into one commit.
-- Skipping CI after a fix push.
-- Replying to threads with text instead of resolving silently.
-- Force-pushing to hide review history.
-- Auto-resolving threads where the reviewer is still pushing back.
-
-## Composition
-
-References: `/code-review`, `/architect`, `/contract`, `/interview`, `/artifact-protocol`, `/issue-capture`, `/compound-workflow`. Tooling: `gh pr view`, `gh api`, GraphQL `resolveReviewThread`.
-
-## Final response
-
-End with exactly:
-
-> Comments addressed. Continue to `/learn`.
+- **Never post reply text.** The only communication channels this skill uses are: (a) commits that address the comment, (b) silent thread resolution, (c) unresolved threads as pushback signal.
+- **Autonomous triage.** Decide, print the table for transparency, execute. No approval gate. The user can interrupt; silence is consent.
+- **Pushback must cite a principle.** Every Push-back row's one-line reason names the specific rule it invokes (locked architecture, AGENTS.md principle, issue scope). Without a citable reason, the verdict becomes Address.
+- **Escalation can invert the triage.** If escalation changes the architecture, previously-Address comments may become Push-back — re-print the updated table and keep executing.
+- **One commit per addressed comment.** Makes it obvious which change answers which finding.
+- **Grounding rules apply.** If a reviewer's suggestion references an API, verify it against docs before accepting the suggestion as valid.

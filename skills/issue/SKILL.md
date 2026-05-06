@@ -1,131 +1,166 @@
 ---
 name: issue
-description: "Open the implementation GitHub issue from a locked design after /review, before /work. Body captures architectural intent only — Problem, Game board, Architecture (mermaid), Modules, Verification, Out of scope. Also files Boy Scout follow-up issues that were captured during the run. Use when the user types /issue, when /review is locked, or when issues need to be staged before code is written. Writes 20-issue.md and hands off to /work."
+description: Open a clean GitHub issue from the architecture locked by /review. Body captures architectural intent only: Problem, Game board, Architecture with mermaid, Modules, Verification, Out of scope. No implementation steps, no changes list, no test-plan checklist. Hands off to /work.
 ---
 
 # /issue
 
-Open a clean GitHub issue from the locked architecture. The body captures intent only — no implementation steps, no test-plan checklists, no file lists. Implementation belongs in `/work`; tests belong in `/test-plan`.
+Open a GitHub issue that captures the locked architecture.
 
-## When this fires
-
-- The user types `/issue`
-- `/review` produced a `locked` verdict
-- Boy Scout follow-up issues from `/issue-capture` are ready to be filed
-
-## Position in the workflow
-
-Previous: `/review`. Next: `/work`. See `/compound-workflow`.
+The issue is the durable architectural contract for the implementation cycle. It is not a task list.
 
 ## Preconditions
 
-- `<run-dir>/19-review.md` is `locked`
-- `gh` is installed and authenticated, or the user has accepted local-only mode
-- Repository tracks issues on GitHub (or the equivalent issue tracker is configured)
+- A locked architecture must be present in the conversation context.
+- The locked architecture must have come from `/review` or have been explicitly accepted after `/review`.
+- If no locked architecture exists, tell the user to run `/architect` and `/review` first, then stop.
+- `gh` must be authenticated:
 
-## Stance
+```bash
+gh auth status
+```
 
-The issue is the contract for `/work`. It must be readable in three minutes by a contributor who has not seen the run. Cite the run's artifacts but do not paste them.
+If authentication fails, tell the user to run `gh auth login` and stop.
 
-## Implementation issue body
+## Issue philosophy
 
-Open one issue with this exact body shape:
+The issue should function as a mechanism:
 
-```markdown
+- it gives implementers the source of truth
+- it gives reviewers the contract to enforce
+- it makes scope boundaries explicit
+- it prevents implementation drift
+- it captures the desired equilibrium without dictating every step
+
+Do not include implementation steps. `/work` owns the task list.
+
+## Process
+
+1. Read the locked architecture from conversation context.
+2. Derive a short, imperative issue title under 70 characters.
+3. Assemble the issue body using the template below.
+4. Write the body to a temp file:
+
+```bash
+BODY_FILE="$(mktemp -t issue-body-XXXXXX.md)"
+```
+
+5. Create the issue:
+
+```bash
+gh issue create --title "<title>" --body-file "$BODY_FILE"
+```
+
+6. Capture the printed issue URL.
+7. Extract the issue number.
+8. Delete the temp file.
+9. Print the issue URL and number.
+
+## What NOT to include
+
+- No “Changes” section.
+- No “Files changed” section.
+- No “Implementation steps.”
+- No checklist test plan.
+- No “How to run.”
+- No rollout plan beyond the architectural verification paragraph.
+- No emojis in headers.
+- No speculative future work.
+- No design alternatives unless the locked architecture explicitly needs a trade-off note.
+
+## Issue body template
+
+Use this exact structure. Section order is fixed. Do not add sections.
+
+````markdown
 ## Problem
 
-<one to two sentences from /contract — what is true now, what must be true>
+<One tight paragraph. What is wrong or missing, who feels it, what invariant is at risk, and what must remain true. First-principles framing. No solution language here.>
 
 ## Game board
 
-- Players: <list>
-- Local shortcut: <one line>
-- Global cost: <one line>
-- Desired equilibrium: <one line>
-- Mechanism: <one line>
+| Player | Incentive | Risk | Mechanism |
+|---|---|---|---|
+| <player> | <what they are tempted to do> | <bad local/global outcome> | <how the architecture aligns incentives> |
+
+Desired equilibrium: <one sentence describing the stable behavior this architecture should create.>
 
 ## Architecture
 
-<one sentence summary>
+<Short prose description — 1-2 paragraphs — of the proposed architecture from `/architect`.>
 
-\`\`\`mermaid
-<mermaid diagram from /architect, only if it conveys structure prose cannot>
-\`\`\`
+```mermaid
+<flowchart or classDiagram from /architect>
+```
+
+<If the change has lifecycle, include the stateDiagram-v2 as well:>
+
+```mermaid
+<stateDiagram-v2 from /architect>
+```
 
 ## Modules
 
-- `<module>` — <one-line responsibility>
-- `<module>` — <one-line responsibility>
+| # | Name | Responsibility | Interface | Hides | Dependency | Incentive effect |
+|---|---|---|---|---|---|---|
+| 1 | `<Name>` | <one sentence> | `<signature>` | <impl detail> | <pure-core / in-process / local-substitutable / ports-and-adapters / true-external> | <how this makes correct use easy or misuse loud> |
+| 2 | ... | | | | | |
 
 ## Verification
 
-- Acceptance criteria: see `<run-dir>/03-contract.md`
-- Test plan: see `<run-dir>/18-test-plan.md`
-- Verification commands: <list of shell commands>
+<How we will prove end-to-end that this works. Focus on observable behavior at the public interface, invariant protection, failure behavior, and incentive mechanism. Not a test-plan checklist — one paragraph describing what "done" looks like.>
 
 ## Out of scope
 
-- <non-goal>
-- <non-goal>
+- <explicit non-goal>
+- <explicit non-goal>
+````
 
-## Run
+## Heredoc invocation pattern
 
-`<run-dir>` (artifacts 01-scout.md through 19-review.md)
+Always use a temp file rather than inlining the body. Mermaid blocks contain backticks that break shell quoting.
+
+```bash
+BODY_FILE="$(mktemp -t issue-body-XXXXXX.md)"
+cat > "$BODY_FILE" <<'EOF'
+## Problem
+
+...
+
+## Game board
+
+...
+
+## Architecture
+
+...
+
+EOF
+
+gh issue create --title "<title>" --body-file "$BODY_FILE"
+rm "$BODY_FILE"
 ```
 
-## Boy Scout follow-up issues
+## Title rules
 
-For each high-confidence candidate in `<run-dir>/issue-candidates.md`:
+- Imperative mood: “Extract rate limiter into port”, not “Rate limiter extraction”.
+- Under 70 characters.
+- No issue number prefix.
+- No trailing period.
+- No emoji.
 
-- Open a separate issue with the candidate's title and body (per `/issue-capture` schema).
-- Tag it `boy-scout` (or the project's equivalent).
-- Link it to the implementation issue as a "discovered during run" reference.
-- Mark the candidate in `issue-candidates.md` with the issue number.
+## Mermaid rules
 
-Medium-confidence candidates stay in `issue-candidates.md` for `/learn` to triage.
+- `flowchart LR` for request/response or data flow.
+- `flowchart TD` for hierarchy.
+- `classDiagram` for module graphs.
+- `stateDiagram-v2` for lifecycle — always when an entity has states.
+- Keep node labels short.
+- Quote multi-word labels.
+- Verify the diagram renders on GitHub before closing the terminal when possible.
 
-## Required output
+## Output
 
-Write `<run-dir>/20-issue.md`:
+Print the issue URL and number. Then end with exactly this line and stop:
 
-### 1. Implementation issue
-Number, URL, title, full body that was filed.
-
-### 2. Boy Scout issues filed
-Table:
-
-| Candidate title | Issue # | URL | Confidence |
-|---|---|---|---|
-
-### 3. Candidates deferred
-Candidates left in `issue-candidates.md` with reason.
-
-### 4. Handoff
-Block per `/artifact-protocol`, pointing at `/work`. Include the implementation issue number in `required_context`.
-
-## Rules
-
-- One implementation issue per run.
-- The body captures intent only: no implementation steps, no file lists, no test checklists.
-- Mermaid only when it conveys structural relationship prose cannot.
-- Out of scope is explicit (mirrors `/contract` non-goals).
-- Boy Scout issues are scoped, separate, and linked.
-- Title is short (under 70 characters).
-
-## Anti-patterns
-
-- A "tasks" checklist in the body. Move to `/work`.
-- Pasting full architecture artifact into the body. Link instead.
-- Bundling unrelated Boy Scout findings into the implementation issue.
-- Vague titles ("Improve auth").
-- Embedding implementation choices ("Use Redis to store sessions") without justifying them as design.
-
-## Composition
-
-References: `/artifact-protocol`, `/issue-capture`, `/compound-workflow`. Tooling: `gh issue create`, `gh issue list`, `gh issue link`.
-
-## Final response
-
-End with exactly:
-
-> Issue opened. Continue to `/work`.
+> Issue created: <url>. Run `/work <issue#>` to start implementation on the current branch.

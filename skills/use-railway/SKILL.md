@@ -12,6 +12,11 @@ allowed-tools: Bash(railway:*), Bash(which:*), Bash(command:*), Bash(npm:*), Bas
 
 # Use Railway
 
+## First-principles rule
+
+Think from first principles before following an existing pattern: name what is true now, what must remain true, and what you want to be true, then choose the smallest action that closes the gap. Few-shot: if a task says "add a service," ask "what complexity does this hide?"; if none, do not add it. If a task says "add a fallback," ask "what failure does this mask?"; if it masks failure, model an explicit typed error or recovery path. If a task says "match the existing pattern," ask "which invariant does the pattern protect?"; keep it only if the invariant still applies.
+
+
 ## Railway resource model
 
 Railway organizes infrastructure in a hierarchy:

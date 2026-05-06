@@ -1,11 +1,13 @@
 ---
 name: debug
-description: "Standalone bug-investigation entry point — alternative to the full compound-engineering chain. Use when the user types /debug, when a specific bug needs a reproduce → root-cause → fix loop, or when they describe a 'the code does X but should do Y' problem. Requires a reproduction, traces root cause with hypotheses, applies first-principles and game-theory analysis to the cause, implements the minimal fix, verifies the original reproduction and regression test, then records whether the fix generalizes. Invokes /interview inline after three failed hypotheses. Hands off to /pr."
+description: Standalone bug-investigation entry point. Requires a reproduction, traces root cause with hypotheses and experiments, analyzes the bug from first principles and game theory, implements the minimal fix, verifies the original reproduction and regression test, then records whether the fix generalizes. Invokes /interview inline after three failed hypotheses. Hands off to /pr.
 ---
 
 # /debug
 
-Investigate and fix a bug. Alternative entry point to the chain in `/compound-workflow`. Skip the full design phases only when the problem shape is already "the code does X, but it should do Y."
+Investigate and fix a bug.
+
+This skill is an alternative workflow entry point. It skips `/interview` and `/architect` only when the problem shape is already: “the code does X, but it should do Y.”
 
 Do not redesign the system unless the bug proves the architecture is wrong.
 
@@ -50,7 +52,7 @@ Prefer to create a regression test before the fix. You may commit a failing test
 
 ## Phase 2 — First-principles trace
 
-Apply `/first-principles`. Start at the failure site and walk outward through the call graph.
+Start at the failure site and walk outward through the call graph.
 
 For each relevant frame or module, record:
 
@@ -66,7 +68,7 @@ Reduce the bug to broken invariant, incorrect assumption, missing boundary valid
 
 ## Phase 3 — Game-theoretic bug diagnosis
 
-Apply `/game-theory`. Ask what incentive or mechanism allowed the bug.
+Ask what incentive or mechanism allowed the bug.
 
 Record:
 
@@ -226,7 +228,3 @@ Then end with exactly this line and stop:
 - Do not silently fall back.
 - Do not use architecture work as a bug-fix shortcut.
 - Fix the mechanism when the bug was caused by bad incentives.
-
-## Composition
-
-References: `/first-principles`, `/game-theory`, `/interview`, `/issue-capture`, `/learn`, `/pr`, `/compound-workflow`.

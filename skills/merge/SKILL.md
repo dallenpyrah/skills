@@ -1,137 +1,125 @@
 ---
 name: merge
-description: "Final merge gate after /learn. Verifies clean tree, open PR, up-to-date pushed head, passing required checks, reviewability, learning committed, and head SHA matches before merging through GitHub with the safe strategy. Deletes the branch, checks out base, fast-forwards. Use when the user types /merge, when the PR is reviewed and learned-from and ready to land, or when a previously failed merge gate needs to be retried. Writes 29-merge.md and closes the workflow."
+description: Merge the current PR after /learn has committed and pushed the learning file. Verifies a clean tree, open PR, up-to-date pushed head, passing required checks, and reviewability before merging with the repository's safe strategy, deleting the branch, checking out the base branch, and pulling it forward.
 ---
 
 # /merge
 
-The only normal-workflow skill allowed to land a PR. Verifies every gate, then merges through GitHub with head-SHA protection.
+## First-principles rule
 
-## When this fires
+Think from first principles before following an existing pattern: name what is true now, what must remain true, and what you want to be true, then choose the smallest action that closes the gap. Few-shot: if a task says "add a service," ask "what complexity does this hide?"; if none, do not add it. If a task says "add a fallback," ask "what failure does this mask?"; if it masks failure, model an explicit typed error or recovery path. If a task says "match the existing pattern," ask "which invariant does the pattern protect?"; keep it only if the invariant still applies.
 
-- The user types `/merge`
-- `/learn` is complete and pushed
-- The PR is ready to land
 
-## Position in the workflow
-
-Previous: `/learn`. Next: end of run. See `/compound-workflow`.
-
-`/merge` is the only normal-workflow skill that lands trunk. `/incident` may also land trunk under explicit production-pressure confirmation; no other skill should.
+Merge the reviewed PR after the learning file has been committed and pushed.
 
 ## Preconditions
 
-- The PR is open and the branch is the PR's head
-- The working tree is clean (`git status` shows no changes)
-- Required checks pass on the head SHA
-- All review threads either resolved or explicitly accepted with citation
-- The learning file from `/learn` is committed and pushed
+1. `/learn` has completed on this PR and pushed its learning commit.
+2. The current branch is the PR branch, not `main`, `master`, or `trunk`.
+3. Working tree is clean: `git status --porcelain` is empty.
+4. `gh` authenticated.
+5. The PR is open.
 
-## Stance
+## Process
 
-Refuse to merge if any gate is unsatisfied. The gate output names the exact blocker — the user can act on it without guessing. Never merge by direct local commits to trunk. Never use destructive operations as a shortcut.
+1. Identify the current branch and PR:
 
-## Gates
+```bash
+git branch --show-current
+gh pr view --json number,url,state,baseRefName,headRefName,headRefOid,isDraft,reviewDecision,mergeStateStatus
+```
 
-Run in parallel. Each gate either passes or names the blocker.
+Stop if:
 
-### 1. Clean tree
-- `git status` shows no unstaged or untracked changes
-- No stash entries that should have been part of this run
+- branch is `main`, `master`, or `trunk`
+- no PR is associated with the branch
+- PR state is not `OPEN`
+- PR is draft
+- `headRefName` does not match the current branch
 
-### 2. Branch identity
-- Current branch matches the PR head
-- `git rev-parse HEAD` matches `gh pr view <number> --json headRefOid`
+2. Verify `/learn` ran for this PR.
 
-### 3. Up-to-date
-- The PR head is at the latest pushed commit
-- The base branch is fetched; the merge will not produce surprises
+Use the PR body to find `Closes #<issue>`, then check the current branch contains a pushed learning commit:
 
-### 4. CI green
-- `gh pr checks <number>` shows all required checks passing on the head SHA
-- No required check is queued or running
+```bash
+gh pr view --json body -q .body
+git log --oneline -20 --grep "docs: capture learning for #<issue>"
+git status --porcelain=v1 --branch
+```
 
-### 5. Reviewability
-- Required reviewers approved (or repo policy permits self-merge)
-- No active "request changes" reviews
-- Threads resolved or explicitly accepted with citation in `/address`
+Stop if no matching commit exists. Stop if the branch status shows the local branch is ahead of upstream; tell the user to run `/learn` again or push the missing commit.
 
-### 6. Learning committed
-- A `docs/learnings/<date>-<slug>.md` file referenced in `<run-dir>/28-learn.md` exists at HEAD
-- The file is on the remote head
+3. Verify checks are green.
 
-### 7. Head SHA pinning
-- The merge will be performed against a specific SHA, not the symbolic head
-- Any push between gate evaluation and merge invalidates the gate
+```bash
+gh pr checks --watch --fail-fast
+```
 
-## Procedure
+- If GitHub reports no checks, treat that as `none-configured` and continue.
+- If checks fail, surface the failing check names and stop.
+- If checks are pending, wait because `--watch` blocks until termination.
 
-### 1. Run gates
-Print a gate table:
+4. Verify review state.
 
-| Gate | Status | Evidence / blocker |
-|---|---|---|
+Use `reviewDecision` from `gh pr view`:
 
-### 2. If all pass
-- Merge via `gh pr merge <number> --<strategy>` where `<strategy>` is the repo's safe strategy (`--squash`, `--merge`, `--rebase`)
-- Pin to the head SHA: `gh pr merge <number> --squash --match-head-commit <SHA>`
-- After merge, delete the branch: `gh pr merge ... --delete-branch` or `git push origin :<branch>` after confirming the remote
-- Locally, switch to the base branch and fast-forward: `git checkout <base> && git pull --ff-only`
+- `APPROVED` — continue.
+- empty/null — continue only if the repo has no review requirement; state that explicitly in output.
+- `REVIEW_REQUIRED` or `CHANGES_REQUESTED` — stop. Do not bypass review.
 
-### 3. If any gate fails
-- Do not merge
-- Print the blocker(s)
-- Hand off to the responsible skill (`/address` for review issues, `/verify` for failing checks, `/learn` for missing learning, `/work` for tree state)
+5. Capture the exact head commit and merge.
 
-## Required output
+Use `--match-head-commit` so a race cannot merge a different commit than the one verified.
 
-Write `<run-dir>/29-merge.md`:
+Default strategy is squash because the compound workflow produces many mechanical commits and the issue/PR preserve the history. If the repository only allows merge queues, omit the strategy and let GitHub enqueue it.
 
-### 1. Gate table
-Final state of every gate.
+```bash
+HEAD_SHA=$(git rev-parse HEAD)
+gh pr merge --squash --delete-branch --match-head-commit "$HEAD_SHA"
+```
 
-### 2. Merge result
-- Merge SHA
-- PR closed and `Closes #<issue>` resolved
-- Branch deleted (remote and local)
-- Base branch fast-forwarded locally
+If GitHub reports the repository requires a merge queue or rejects the squash strategy, do not guess repeatedly. Read the error, then use the smallest compatible command:
 
-### 3. Run summary
-- Total artifacts written
-- Issues filed (implementation + Boy Scout)
-- Learnings committed
+```bash
+gh pr merge --delete-branch --match-head-commit "$HEAD_SHA"
+```
 
-### 4. Handoff
-Block per `/artifact-protocol` with `to: end` (workflow complete).
+Do not use `--admin`.
+
+6. Move the local checkout to the base branch and update it.
+
+```bash
+git checkout "<baseRefName>"
+git pull --ff-only origin "<baseRefName>"
+```
+
+If the local branch deletion did not happen automatically, delete it after checkout:
+
+```bash
+git branch -d "<headRefName>"
+```
+
+## Output
+
+If the PR merged immediately, print:
+
+- PR URL
+- merge result: merged
+- base branch checked out
+- final commit currently at `HEAD`
+
+Then end with exactly this line and stop:
+
+> PR merged: <url>. Base branch <base> is up to date.
+
+If GitHub queued the PR instead of merging immediately, print the queue status and end with exactly this line and stop:
+
+> PR queued: <url>. GitHub will merge it when the merge queue admits it.
 
 ## Rules
 
-- All gates must pass; no soft gates.
-- Merge through GitHub, never by direct local commit to trunk.
-- Pin the head SHA to prevent racing pushes.
-- Delete the branch after merge.
-- Fast-forward, never reset.
-- Do not bypass hooks or required checks.
-- If a gate fails, name the blocker and hand off.
-
-## Anti-patterns
-
-- "It's just a small fix" → bypass review.
-- Force-merge to skip a flaky check (root-cause it).
-- Local commit to base branch.
-- Merging a PR whose learning has not been pushed.
-- Deleting a branch that still has unmerged work.
-
-## Composition
-
-References: `/learn`, `/address`, `/verify`, `/compound-workflow`, `/artifact-protocol`. Tooling: `gh pr merge`, `gh pr checks`, `git`.
-
-## Final response
-
-When merged, end with exactly:
-
-> Run merged and closed. Compound-engineering chain complete.
-
-When blocked, end with exactly:
-
-> Merge blocked. See gate table for the next action.
+- Never merge from trunk directly; this skill only merges a PR branch through GitHub.
+- Never use `--admin`.
+- Never merge with failing checks, unresolved changes requested, or a dirty working tree.
+- Never merge a commit different from the one checked by this skill; use `--match-head-commit`.
+- If GitHub queues the PR instead of merging immediately, say so and do not claim the base branch contains the changes yet.
