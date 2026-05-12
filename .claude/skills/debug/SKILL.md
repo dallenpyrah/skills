@@ -1,6 +1,6 @@
 ---
 name: debug
-description: Standalone bug-investigation entry point. Requires a reproduction, traces root cause with hypotheses and experiments, analyzes the bug from first principles and game theory, implements the minimal fix, verifies the original reproduction and regression test, then records whether the fix generalizes. Invokes /interview inline after three failed hypotheses. Hands off to /pr.
+description: Standalone bug-investigation entry point. Requires a reproduction, traces root cause with hypotheses and experiments, analyzes the bug from first principles and game theory, implements the minimal fix, verifies the original reproduction and regression test, then records whether the fix generalizes. Invokes /interview inline after three failed hypotheses. Hands off to /test.
 ---
 
 # /debug
@@ -228,12 +228,12 @@ Mechanism change: <how recurrence is harder or louder>.
 <unverified edge or "None known">
 
 ## Next
-Run `/pr` to open the pull request.
+Run `/test` to harden edge-case coverage before opening the pull request.
 ````
 
 Then end with exactly this line and stop:
 
-> Bug fixed. Run `/pr` to open the pull request.
+> Bug fixed. Run `/test` to harden edge-case coverage.
 
 ## Hard rules
 

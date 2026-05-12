@@ -1,6 +1,6 @@
 ---
 name: work
-description: Execute the architecture in a GitHub issue on the current branch. Reads the issue, derives tasks from the Modules section, commits referencing the issue number. Refuses to run on main/master/trunk without explicit confirmation. No worktrees, no new branches. Hands off to /pr.
+description: Execute the architecture in a GitHub issue on the current branch. Reads the issue, derives tasks from the Modules section, commits referencing the issue number. Refuses to run on main/master/trunk without explicit confirmation. No worktrees, no new branches. Hands off to /test.
 ---
 
 # /work
@@ -106,9 +106,9 @@ git log --oneline origin/main..HEAD
 <unverified item or "None known">
 
 ## Next
-Run `/pr` to open a pull request.
+Run `/test` to harden edge-case coverage before opening a pull request.
 ````
 
 Then end with exactly this line and stop:
 
-> Work complete. Run `/pr` to open a pull request.
+> Work complete. Run `/test` to harden edge-case coverage.
