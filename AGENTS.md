@@ -107,19 +107,20 @@ For non-trivial work I follow this compounding loop. Each skill ends with an exp
 | 3 | `/review` | Pressure-tests the architecture: principle-compliance pass + parallel reality-check. Produces an edited, locked architecture. |
 | 4 | `/issue` | Creates a clean GitHub issue from the locked architecture. Body: Problem / Architecture (+mermaid) / Modules / Verification / Out of scope. No changes list, no test plan. |
 | 5 | `/work` | Executes on the **current branch**. No worktrees, no new branches unless explicitly confirmed on trunk. Commits reference `#<issue>`. Hands off to `/test`. |
-| 6 | `/test` | Audits the issue architecture, actual diff, and existing tests; adds missing edge-case tests only; runs the tightest proof; commits test-only changes. Hands off to `/pr`. |
-| 7 | `/pr` | Opens PR with a minimal body: Summary (2-4 sentences) + mermaid Flow diagram + `Closes #<issue>`. No changes or tests sections. Watches CI (`gh pr checks --watch --fail-fast`) — PR is not complete until checks pass. |
-| 8 | `/code-review` | Six reviewer personas in parallel; dedup + validator pass; posts line-level and summary comments to the PR via `gh pr review` and `gh api`. |
-| 9 | `/address` | Triages PR review comments into Address / Push-back / Escalate and executes immediately — no approval gate. Pushback rows must cite a specific principle. Resolves threads silently via GraphQL (no replies). Watches CI after push — loop is not complete until checks pass. Escalates into `/interview` or `/architect` when a comment surfaces something non-trivial. |
-| 10 | `/learn` | Writes `docs/learnings/YYYY-MM-DD-<slug>.md` capturing what was planned, what actually shipped, what surfaced in review, the non-obvious lesson, and any AGENTS.md amendment candidate. Commits and pushes the learning, then hands off to `/merge`. |
-| 11 | `/merge` | Verifies the PR branch is clean, learned, pushed, reviewed, and green; merges through GitHub with head-SHA protection; deletes the branch; checks out and fast-forwards the base branch. |
-| — | `/debug` | Alternative entry point. Reproduce → root-cause → fix. Refuses to fix without a reproduction. Chains into `/test` → `/pr` → `/code-review` → `/address` → `/learn` → `/merge`. |
+| 6 | `/test` | Audits the issue architecture, actual diff, and existing tests; adds missing edge-case tests only; runs the tightest proof; commits test-only changes. Hands off to `/docs`. |
+| 7 | `/docs` | Audits changed behavior, APIs, config, operations, migrations, and existing docs; updates only missing docs; commits doc-only changes. Hands off to `/pr`. |
+| 8 | `/pr` | Opens PR with a minimal body: Summary (2-4 sentences) + mermaid Flow diagram + `Closes #<issue>`. No changes or tests sections. Watches CI (`gh pr checks --watch --fail-fast`) — PR is not complete until checks pass. |
+| 9 | `/code-review` | Six reviewer personas in parallel; dedup + validator pass; posts line-level and summary comments to the PR via `gh pr review` and `gh api`. |
+| 10 | `/address` | Triages PR review comments into Address / Push-back / Escalate and executes immediately — no approval gate. Pushback rows must cite a specific principle. Resolves threads silently via GraphQL (no replies). Watches CI after push — loop is not complete until checks pass. Escalates into `/interview` or `/architect` when a comment surfaces something non-trivial. |
+| 11 | `/learn` | Writes `docs/learnings/YYYY-MM-DD-<slug>.md` capturing what was planned, what actually shipped, what surfaced in review, the non-obvious lesson, and any AGENTS.md amendment candidate. Commits and pushes the learning, then hands off to `/merge`. |
+| 12 | `/merge` | Verifies the PR branch is clean, learned, pushed, reviewed, and green; merges through GitHub with head-SHA protection; deletes the branch; checks out and fast-forwards the base branch. |
+| — | `/debug` | Alternative entry point. Reproduce → root-cause → fix. Refuses to fix without a reproduction. Chains into `/test` → `/docs` → `/pr` → `/code-review` → `/address` → `/learn` → `/merge`. |
 | — | `/incident` | Production-pressure entry point. Contain (rollback / flag-off / disable) → communicate → hand off. Distinct from `/debug` (reproduce-first, calm). Hands off to `/debug` if the underlying bug still needs fixing, or `/learn` if rollback was the fix. |
 
 ### Rules
 
 - I use this workflow for non-trivial changes. Single-line typos skip to `/work` or go straight to a fix commit.
-- I never start a skill mid-chain without its precondition artifact. `/work` requires an issue. `/test` requires implementation work and an issue or discoverable issue reference. `/address` requires a PR with comments. `/code-review` requires a PR.
+- I never start a skill mid-chain without its precondition artifact. `/work` requires an issue. `/test` requires implementation work and an issue or discoverable issue reference. `/docs` requires tested implementation work and an issue or discoverable issue reference. `/address` requires a PR with comments. `/code-review` requires a PR.
 - I do not auto-chain. I end each skill with its handoff line and let the user invoke the next one.
 - `/address` runs autonomously: prints the triage table for transparency, then executes. The user can interrupt; silence is consent. Pushback rows must cite a specific principle (locked architecture, AGENTS.md rule, issue scope) — without a citable reason the verdict becomes Address.
 - `/scout` is optional and only earns its keep when the domain is unfamiliar. For familiar work, skip straight to `/interview`; `/architect` must do scout-equivalent grounding if no scout brief exists.

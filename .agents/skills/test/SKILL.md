@@ -1,6 +1,6 @@
 ---
 name: test
-description: Audit and harden tests after /work and before /pr. Reads the linked issue architecture, changed files, commits, diff, and existing tests; derives an edge-case test matrix; adds only missing tests; runs the tightest verification loop; commits test-only changes; hands off to /pr.
+description: Audit and harden tests after /work and before /docs. Reads the linked issue architecture, changed files, commits, diff, and existing tests; derives an edge-case test matrix; adds only missing tests; runs the tightest verification loop; commits test-only changes; hands off to /docs.
 ---
 
 # /test
@@ -140,12 +140,12 @@ Tests hardened, or no missing tests found.
 <uncovered edge, failing production behavior, or "None known">
 
 ## Next
-Run `/pr` to open the pull request.
+Run `/docs` to update required documentation before opening the pull request.
 ````
 
 Then end with exactly this line and stop:
 
-> Tests hardened. Run `/pr` to open the pull request.
+> Tests hardened. Run `/docs` to update required documentation.
 
 If a production bug is exposed, do not print the handoff. End with:
 
