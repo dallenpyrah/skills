@@ -5,10 +5,7 @@ description: Open a pull request with a strict minimal body — Summary (2-4 sen
 
 # /pr
 
-## First-principles rule
-
-Think from first principles before following an existing pattern: name what is true now, what must remain true, and what you want to be true, then choose the smallest action that closes the gap. Few-shot: if a task says "add a service," ask "what complexity does this hide?"; if none, do not add it. If a task says "add a fallback," ask "what failure does this mask?"; if it masks failure, model an explicit typed error or recovery path. If a task says "match the existing pattern," ask "which invariant does the pattern protect?"; keep it only if the invariant still applies.
-
+Before rendering user-facing output, read `../_shared/plain-output.md`.
 
 Open a pull request with a minimal, opinionated body.
 
@@ -131,7 +128,28 @@ gh pr checks "<pr-number>" --watch --fail-fast
 
 ## Output
 
-Print the PR URL and the final CI status (all-pass / none-configured / failed). Only proceed to the handoff when CI has terminated cleanly (all-pass or no-checks). If CI failed, do NOT print the handoff — print the failure summary and stop.
+Use Plain Senior output with the PR URL and final CI status (`all-pass`, `none-configured`, or `failed`).
+
+````markdown
+## Decision
+PR opened or updated: <url>.
+
+## Why
+CI status: <all-pass | none-configured | failed>.
+
+## Example
+```bash
+gh pr checks "<pr-number>" --watch --fail-fast
+```
+
+## Risk
+<failed check summary, no checks configured, or "None known">
+
+## Next
+<handoff line below>
+````
+
+Only proceed to the handoff when CI has terminated cleanly (all-pass or no-checks). If CI failed, do NOT print the handoff — print the failure summary and stop.
 
 On success, end with exactly this line and stop:
 

@@ -5,6 +5,8 @@ description: "Open a clean GitHub issue from the architecture locked by /review.
 
 # /issue
 
+Before rendering user-facing output, read `../_shared/plain-output.md`.
+
 Open a GitHub issue that captures the locked architecture.
 
 The issue is the durable architectural contract for the implementation cycle. It is not a task list.
@@ -161,6 +163,14 @@ rm "$BODY_FILE"
 
 ## Output
 
-Print the issue URL and number. Then end with exactly this line and stop:
+Use Plain Senior output with the issue URL, issue number, and exact next command.
+
+Example:
+
+```bash
+/work <issue#>
+```
+
+Then end with exactly this line and stop:
 
 > Issue created: <url>. Run `/work <issue#>` to start implementation on the current branch.

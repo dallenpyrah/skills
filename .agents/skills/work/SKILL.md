@@ -5,10 +5,7 @@ description: Execute the architecture in a GitHub issue on the current branch. R
 
 # /work
 
-## First-principles rule
-
-Think from first principles before following an existing pattern: name what is true now, what must remain true, and what you want to be true, then choose the smallest action that closes the gap. Few-shot: if a task says "add a service," ask "what complexity does this hide?"; if none, do not add it. If a task says "add a fallback," ask "what failure does this mask?"; if it masks failure, model an explicit typed error or recovery path. If a task says "match the existing pattern," ask "which invariant does the pattern protect?"; keep it only if the invariant still applies.
-
+Before rendering user-facing output, read `../_shared/plain-output.md`.
 
 Execute the architecture from a GitHub issue. Stay on the current branch.
 
@@ -80,11 +77,37 @@ Do NOT silently diverge from the issue.
 
 ## Output
 
-When all tasks are complete:
+When all tasks are complete, run:
 
-1. Run `git status` to confirm the tree is clean.
-2. Run `git log --oneline origin/main..HEAD` (or the appropriate base) to show the commit list.
-3. Print a one-line summary.
+```bash
+git status --porcelain
+git log --oneline origin/main..HEAD
+```
+
+Then use Plain Senior output:
+
+````markdown
+## Decision
+Work complete.
+
+## Why
+<one-line summary of what landed>
+
+## Example
+```bash
+git log --oneline origin/main..HEAD
+```
+
+## Proof
+- tree=<clean or exact dirty status>
+- commits=<short commit list>
+
+## Risk
+<unverified item or "None known">
+
+## Next
+Run `/pr` to open a pull request.
+````
 
 Then end with exactly this line and stop:
 

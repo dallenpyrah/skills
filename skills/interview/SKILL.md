@@ -5,6 +5,8 @@ description: Interview the user in five-question rounds until the problem, value
 
 # /interview
 
+Before rendering user-facing output, read `../_shared/plain-output.md`.
+
 Interview the user relentlessly until there is shared understanding.
 
 Your job is not to design the architecture yet. Your job is to lock the **game board**:

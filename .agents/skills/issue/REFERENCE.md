@@ -2,17 +2,16 @@
 
 ## Issue body template
 
-Use this exact structure. Section order is fixed. Do not add sections.
+Use this exact structure. Section order is fixed. Do not add sections. Keep each section plain and short.
 
-```markdown
+````markdown
 ## Problem
 
-<One tight paragraph. What is wrong or missing, who feels it, what must remain true.
- First-principles framing. No solution language here.>
+<One tight paragraph. What is wrong, who feels it, what must remain true. No solution language here.>
 
 ## Architecture
 
-<Short prose description — 1-2 paragraphs — of the proposed architecture from `/architect`.>
+<Short prose description, 1-2 paragraphs, of the proposed architecture from `/architect`.>
 
 ```mermaid
 <flowchart or classDiagram from /architect>
@@ -33,13 +32,13 @@ Use this exact structure. Section order is fixed. Do not add sections.
 
 ## Verification
 
-<How we will prove end-to-end that this works. Focus on observable behavior at the public interface. Not a test-plan checklist — one paragraph describing what "done" looks like.>
+<How we will prove this works at the public interface. One paragraph.>
 
 ## Out of scope
 
 - <explicit non-goal>
 - <explicit non-goal>
-```
+````
 
 ## Heredoc invocation pattern
 

@@ -5,6 +5,8 @@ description: Re-derive the simplest, cleanest architecture from first principles
 
 # /architect
 
+Before rendering user-facing output, read `../_shared/plain-output.md`.
+
 Re-derive the architecture from the problem, constraints, values, non-goals, codebase reality, and incentive structure.
 
 Do not anchor on the user's initial solution sketch unless it survives first-principles scrutiny and game-theoretic pressure.
@@ -190,86 +192,45 @@ Use this checklist as the architecture spine. A violation is allowed only when i
 
 If you cannot ground a decision, stop and ground it using the strongest available source. Do not guess.
 
-## Output shape
+## Output
 
-Render the final message in chat using this structure and these headings:
+Use Plain Senior output. Keep the proposal readable and complete enough for `/review`.
 
 ````markdown
+## Decision
+<one sentence naming the architecture>
+
 ## Problem
-<one sentence, first-principles>
+<what is true now, what must remain true, what should become true>
 
-## Game board
-- Players:
-- Incentives:
-- Information asymmetries:
-- Bad equilibrium:
-- Desired equilibrium:
+## Why
+- Grounding: <repo/doc facts that shaped the design>
+- Trade-off: I am trading <X> for <Y>.
+- Mechanism: <how the good move becomes cheap and the bad move loud>
 
-## Constraints
-- <what must remain true>
-- <edge cases and compatibility constraints>
-- <architectural values that must be preserved>
-
-## Grounding findings
-- <repo/code/test/doc facts that shaped the design>
-
-## Core trade-off
-I am trading <X> for <Y>.
-
-## Architecture
-<short prose — 1–2 paragraphs>
+## Design
+<1-2 paragraphs. Name modules only when they change the decision.>
 
 ```mermaid
-<flowchart, sequenceDiagram, or classDiagram>
+<flow, module, or state diagram when it clarifies the design>
 ```
 
-<if lifecycle exists, add:>
-
-```mermaid
-stateDiagram-v2
-  <states and transitions>
+## Example
+```ts
+<main interface, state type, command shape, or pseudocode>
 ```
 
-## Modules
-1. **<Name>** — Responsibility: <responsibility>. Interface: `<signature>`. Hides: <implementation detail or volatile decision>. Dependency: <category>. State: <none/owned/edge>. Errors: <typed model>. Incentive effect: <how this changes behavior>. Tests: <strategy>.
-2. ...
+## Proof
+- Invariants protected:
+- Failure modes:
+- Observability:
+- Tests:
 
-## Principle fit
-- **First principles:** <how derived>
-- **Deep modules / information hiding:** <how satisfied>
-- **Composition / extensibility:** <how satisfied>
-- **Single source of truth:** <how satisfied>
-- **Functional core / state at edges:** <how satisfied>
-- **Lifecycle state:** <state machine or why not applicable>
-- **Ports and adapters:** <how I/O is isolated>
-- **Effect discipline:** <plain TS vs Effect-owned paths>
-- **No silent fallbacks:** <how recovery is modeled or why none exists>
-- **Performance:** <budget or non-issue>
-- **Testability:** <how correctness is known>
+## Risk
+- <remaining risk or explicit trade-off>
 
-## Game-theory fit
-- **Good move made easy:** <mechanism>
-- **Bad move made impossible/loud:** <mechanism>
-- **Information exposed:** <what actors know>
-- **Principal-agent risk:** <risk and mitigation>
-- **Repeated-game durability:** <why future changes stay healthy>
-- **Adversarial case:** <attacker/malformed input/flaky dependency/misuse>
-- **Equilibrium:** <expected stable behavior>
-
-## Quality attributes
-- **Performance:** <complexity, latency, memory, throughput, caching, batching, concurrency>
-- **Reliability:** <failure modes, retries, timeouts, cancellation, partial failure>
-- **Security:** <least privilege and data exposure>
-- **Observability:** <logs/traces/metrics/events/audit>
-- **Migration:** <compatibility and rollout>
-- **Tests:** <unit, integration, state transition, adapter, error path, performance>
-
-## Why this is the simplest version
-<one paragraph — what you considered and discarded>
-
-## What this is NOT
-- <explicit non-goal>
-- <explicit non-goal>
+## Next
+Run `/review` to pressure-test it before opening an issue.
 ````
 
 Then end with exactly this line and stop:

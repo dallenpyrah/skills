@@ -5,10 +5,7 @@ description: Explore a codebase to find opportunities for architectural improvem
 
 # Improve Codebase Architecture
 
-## First-principles rule
-
-Think from first principles before following an existing pattern: name what is true now, what must remain true, and what you want to be true, then choose the smallest action that closes the gap. Few-shot: if a task says "add a service," ask "what complexity does this hide?"; if none, do not add it. If a task says "add a fallback," ask "what failure does this mask?"; if it masks failure, model an explicit typed error or recovery path. If a task says "match the existing pattern," ask "which invariant does the pattern protect?"; keep it only if the invariant still applies.
-
+Before rendering user-facing output, read `../_shared/plain-output.md`.
 
 Explore a codebase like an AI would, surface architectural friction, discover opportunities for improving testability, and propose module-deepening refactors as GitHub issue RFCs.
 
@@ -32,11 +29,11 @@ The friction you encounter IS the signal.
 
 ### 2. Present candidates
 
-Present a numbered list of deepening opportunities. For each candidate, show:
+Present a numbered list of deepening opportunities using Plain Senior output. For each candidate, show:
 
 - **Cluster**: Which modules/concepts are involved
-- **Why they're coupled**: Shared types, call patterns, co-ownership of a concept
-- **Dependency category**: See [REFERENCE.md](REFERENCE.md) for the four categories
+- **Why**: Shared types, call patterns, co-ownership of a concept
+- **Example**: one small before/after interface or call-site sketch
 - **Test impact**: What existing tests would be replaced by boundary tests
 
 Do NOT propose interfaces yet. Ask the user: "Which of these would you like to explore?"
@@ -72,7 +69,7 @@ Each sub-agent outputs:
 4. Dependency strategy (how deps are handled — see [REFERENCE.md](REFERENCE.md))
 5. Trade-offs
 
-Present designs sequentially, then compare them in prose.
+Present designs sequentially with a small code example for each, then compare them in prose.
 
 After comparing, give your own recommendation: which design you think is strongest and why. If elements from different designs would combine well, propose a hybrid. Be opinionated — the user wants a strong read, not just a menu.
 
@@ -81,3 +78,26 @@ After comparing, give your own recommendation: which design you think is stronge
 ### 7. Create GitHub issue
 
 Create a refactor RFC as a GitHub issue using `gh issue create`. Use the template in [REFERENCE.md](REFERENCE.md). Do NOT ask the user to review before creating — just create it and share the URL.
+
+## Output
+
+Use Plain Senior output at each user-facing stop.
+
+````markdown
+## Decision
+<candidate picked, interface recommended, or issue created>
+
+## Why
+<one paragraph tied to coupling and testability>
+
+## Example
+```ts
+<before/after call-site or interface sketch>
+```
+
+## Risk
+<coupling, migration, or unknown>
+
+## Next
+<exact user choice or issue URL>
+````

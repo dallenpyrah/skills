@@ -5,6 +5,8 @@ description: Pressure-test the architecture produced by /architect. Enforces fir
 
 # /review
 
+Before rendering user-facing output, read `../_shared/plain-output.md`.
+
 Review the architecture that `/architect` produced. This is an architecture review, not a code review.
 
 Be blunt. The goal is to catch design errors before they become GitHub issues.
@@ -191,39 +193,31 @@ Use clear diffs:
 
 When revising modules, include the full revised module entry.
 
-## Output shape
+## Output
 
-Use this structure:
+Use Plain Senior output:
 
-```markdown
-## Verdict
+````markdown
+## Decision
 LOCKED | NOT LOCKED
 
-## First-principles findings
-<findings grouped by severity; if none, one sentence>
+## Why
+- First-principles finding:
+- Game-theory finding:
+- Reality check:
 
-## Game-theory findings
-<findings grouped by severity; if none, one sentence>
-
-## Principle compliance findings
-<findings grouped by severity; if none, one sentence>
-
-## Reality check
-### Agent A — Code grounding
-<short report>
-
-### Agent B — Prior art and incentive history
-<short report>
-
-## Synthesis
-<what the combined evidence means>
-
-## Required architecture edits
-<diffs or revised sections>
-
-## Remaining decisions
-<only if NOT LOCKED>
+## Example
+```diff
+- <old architecture claim>
++ <revised architecture claim>
 ```
+
+## Risk
+<blocking issue, accepted trade-off, or "None known">
+
+## Next
+<handoff line below>
+````
 
 If **NOT LOCKED**, end with exactly this line and stop:
 

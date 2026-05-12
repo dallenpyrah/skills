@@ -5,6 +5,8 @@ description: Pre-/interview grounding for unfamiliar domains. Maps one concrete 
 
 # /scout
 
+Before rendering user-facing output, read `../_shared/plain-output.md`.
+
 Map the territory before `/interview`.
 
 Use this when the domain is unfamiliar enough that interviewing would stall on unknown facts: a new library, external service, repo area, architectural pattern, API, migration path, or failure mode.
@@ -179,50 +181,33 @@ Do not keep collecting facts for completeness.
 
 ## Output
 
-One screen only. Use these headings exactly:
+Use Plain Senior output. One screen.
 
-```markdown
-## Domain
-<one sentence — what was scouted and why now>
+````markdown
+## Decision
+<domain scouted and the main constraint found>
 
-## Evidence gathered
-- <source> — <what it proved>
-- <source> — <what it proved>
+## Why
+- Evidence: <source> — <what it proved>
+- Prior art: <repo fact with path>
+- Constraint: <fact that changes design or interview questions>
 
-## Prior art in this repo
-<what exists, what is missing, what was attempted/abandoned. Cite file paths, commits, comments, or learning files.>
+## Example
+```bash
+<command used to prove the key repo fact>
+```
 
-## First-principles decomposition
-- Primitive facts:
-- Invariants:
-- Constraints:
-- Failure modes:
-- Source of truth:
+## Risk
+<unknown that could change module boundaries, state, errors, ports, performance, or security>
 
-## Game board
-- Players:
-- Incentives:
-- Information asymmetries:
-- Bad local move:
-- Global cost:
-- Desired equilibrium:
-
-## Library / API / pattern landscape
-<top 2-3 relevant options or shapes. One line each. Include trade-off, not feature list.>
-
-## Constraints and edge cases discovered
-- <constraint or edge case>
-- <failure mode>
-- <compatibility concern>
-- <security/performance/lifecycle concern>
-
-## Open questions for /interview
+## Next
+Open questions for `/interview`:
 1. <question the evidence cannot answer>
 2. <question>
 3. <question>
 4. <question>
 5. <question>
-```
+````
 
 ## Rules
 

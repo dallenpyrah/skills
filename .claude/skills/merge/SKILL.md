@@ -5,10 +5,7 @@ description: Merge the current PR after /learn has committed and pushed the lear
 
 # /merge
 
-## First-principles rule
-
-Think from first principles before following an existing pattern: name what is true now, what must remain true, and what you want to be true, then choose the smallest action that closes the gap. Few-shot: if a task says "add a service," ask "what complexity does this hide?"; if none, do not add it. If a task says "add a fallback," ask "what failure does this mask?"; if it masks failure, model an explicit typed error or recovery path. If a task says "match the existing pattern," ask "which invariant does the pattern protect?"; keep it only if the invariant still applies.
-
+Before rendering user-facing output, read `../_shared/plain-output.md`.
 
 Merge the reviewed PR after the learning file has been committed and pushed.
 
@@ -101,18 +98,34 @@ git branch -d "<headRefName>"
 
 ## Output
 
-If the PR merged immediately, print:
+If the PR merged immediately, use Plain Senior output:
 
-- PR URL
-- merge result: merged
-- base branch checked out
-- final commit currently at `HEAD`
+````markdown
+## Decision
+PR merged: <url>.
+
+## Why
+- merge_result=merged
+- base=<baseRefName>
+- head=<verified HEAD_SHA>
+
+## Example
+```bash
+gh pr merge --squash --delete-branch --match-head-commit "$HEAD_SHA"
+```
+
+## Risk
+None known.
+
+## Next
+Base branch <base> is up to date.
+````
 
 Then end with exactly this line and stop:
 
 > PR merged: <url>. Base branch <base> is up to date.
 
-If GitHub queued the PR instead of merging immediately, print the queue status and end with exactly this line and stop:
+If GitHub queued the PR instead of merging immediately, print the queue status using the same shape and end with exactly this line and stop:
 
 > PR queued: <url>. GitHub will merge it when the merge queue admits it.
 

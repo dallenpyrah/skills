@@ -37,11 +37,7 @@ The core principle: **replace, don't layer.**
 
 ## Problem
 
-Describe the architectural friction:
-
-- Which modules are shallow and tightly coupled
-- What integration risk exists in the seams between them
-- Why this makes the codebase harder to navigate and maintain
+Describe the friction in one short paragraph: which modules are shallow, why they are coupled, and why that makes changes risky.
 
 ## Proposed Interface
 

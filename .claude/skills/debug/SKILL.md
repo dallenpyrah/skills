@@ -5,6 +5,8 @@ description: Standalone bug-investigation entry point. Requires a reproduction, 
 
 # /debug
 
+Before rendering user-facing output, read `../_shared/plain-output.md`.
+
 Investigate and fix a bug.
 
 This skill is an alternative workflow entry point. It skips `/interview` and `/architect` only when the problem shape is already: “the code does X, but it should do Y.”
@@ -202,16 +204,32 @@ If yes, note the pattern, do not bundle the broader fix, create or recommend a f
 
 ## Output
 
-Print:
+Use Plain Senior output:
 
-```text
-fix_commit=<sha>
-summary=<one-line summary>
-reproduction=<command or test>
-verification=<commands run>
-generalization=<none or short pattern>
-mechanism_change=<how recurrence was made harder/louder>
+````markdown
+## Decision
+Bug fixed in <sha>.
+
+## Why
+Root cause: <broken invariant or wrong assumption>.
+Mechanism change: <how recurrence is harder or louder>.
+
+## Example
+```bash
+<reproduction or regression-test command>
 ```
+
+## Proof
+- reproduction=<command or test>
+- verification=<commands run>
+- generalization=<none or short pattern>
+
+## Risk
+<unverified edge or "None known">
+
+## Next
+Run `/pr` to open the pull request.
+````
 
 Then end with exactly this line and stop:
 

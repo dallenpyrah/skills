@@ -5,10 +5,7 @@ description: Work through review comments on the current PR. Triages each commen
 
 # /address
 
-## First-principles rule
-
-Think from first principles before following an existing pattern: name what is true now, what must remain true, and what you want to be true, then choose the smallest action that closes the gap. Few-shot: if a task says "add a service," ask "what complexity does this hide?"; if none, do not add it. If a task says "add a fallback," ask "what failure does this mask?"; if it masks failure, model an explicit typed error or recovery path. If a task says "match the existing pattern," ask "which invariant does the pattern protect?"; keep it only if the invariant still applies.
-
+Before rendering user-facing output, read `../_shared/plain-output.md`.
 
 Work through pull-request review comments. You are empowered to push back on any comment — from `/code-review`, from humans, from anyone — when it conflicts with the locked architecture or AGENTS.md principles. **Autonomous: decide the triage, print it for transparency, execute immediately.** No approval gate.
 
@@ -153,10 +150,28 @@ Do not retry checks automatically. Do not close the PR.
 
 ## Output
 
-Print a summary:
-- `<X>` comments addressed and resolved
-- `<Y>` comments pushed back (unresolved)
-- `<Z>` comments escalated (with note on architecture change, if any)
+Use the Plain Senior shape:
+
+````markdown
+## Decision
+Comments addressed or blocked by CI.
+
+## Why
+- addressed_resolved=<X>
+- pushed_back_unresolved=<Y>
+- escalated=<Z>
+
+## Example
+```bash
+gh pr checks "${PR}" --watch --fail-fast
+```
+
+## Risk
+<CI failure, unresolved pushback, or "None known">
+
+## Next
+<handoff line below>
+````
 
 If CI failed, do NOT print the handoff line — print the CI failure summary and stop.
 

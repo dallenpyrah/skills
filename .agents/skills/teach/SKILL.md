@@ -5,10 +5,7 @@ description: Teach Dallen a concept, solution, or pattern using his learning sty
 
 # /teach
 
-## First-principles rule
-
-Think from first principles before following an existing pattern: name what is true now, what must remain true, and what you want to be true, then choose the smallest action that closes the gap. Few-shot: if a task says "add a service," ask "what complexity does this hide?"; if none, do not add it. If a task says "add a fallback," ask "what failure does this mask?"; if it masks failure, model an explicit typed error or recovery path. If a task says "match the existing pattern," ask "which invariant does the pattern protect?"; keep it only if the invariant still applies.
-
+Before rendering user-facing output, read `../_shared/plain-output.md`.
 
 Teach a specific concept using the `dallen-learning-style` profile. That profile owns the *how*. This skill picks the target, grounds it, and renders the template.
 
@@ -28,43 +25,36 @@ If the topic is repo code, library behavior, or an API shape: read the actual co
 
 ## Render
 
-Output uses these verbatim headings, in this order. One screen. Plain English before jargon. Examples before abstraction.
+Use Plain Senior output. One screen. Plain English before jargon. Examples before abstraction.
 
+````markdown
+## Decision
+<the concept in one plain sentence>
+
+## Story
+<the situation that creates the need>
+
+## Why
+<what breaks without this idea, then the core principle>
+
+## Example
+```ts
+<small code or pseudocode example>
 ```
-## The story
-<the situation that created the need — concrete, not abstract. No definition yet.>
 
-## The problem
-<what breaks or becomes painful without this concept — one paragraph>
+## Mental Model
+- Wrong: <likely wrong model>
+- Right: <correct model>
+- Flip: <what changes>
 
-## The simplest solution
-<the dumbest working version — code, pseudocode, or a one-line description>
+## Risk
+<where the concept breaks down>
 
-## The core principle
-<one or two sentences — the load-bearing idea, in plain English>
-
-## Examples
-1. <concrete case>
-2. <second case from a different angle>
-3. <third variation that stresses the pattern>
-
-## The more precise version
-<the technical version — refines the simple model, does not replace it>
-
-## Wrong vs right mental model
-- Likely wrong model: <one sentence>
-- Correct model: <one sentence>
-- The gap: <one sentence — what flips between them>
-
-## Where it fails
-- Works well when: <bullets>
-- Breaks down when: <bullets>
-
-## Check your understanding
+## Next
 1. <diagnostic question — "why does this work" / "where would this fail" / "what changes if X changes">
 2. <second question, different angle>
 3. <teach-back OR build-the-smallest-version prompt>
-```
+````
 
 ## Rules
 
@@ -78,6 +68,6 @@ Output uses these verbatim headings, in this order. One screen. Plain English be
 
 ## Output
 
-The rendered explanation is the output. End with exactly this line and stop:
+The rendered explanation is the output. It must include a concrete code or pseudocode example. End with exactly this line and stop:
 
 > Teach delivered. Answer the check questions, or ask for the next layer.

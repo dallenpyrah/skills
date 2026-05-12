@@ -5,6 +5,8 @@ description: Capture the post-mortem for a compound-engineering cycle. Reads the
 
 # /learn
 
+Before rendering user-facing output, read `../_shared/plain-output.md`.
+
 Close the learning loop.
 
 Capture what was planned, what actually shipped, what the cycle taught, and what mechanism should be preserved or changed.
@@ -166,7 +168,7 @@ If the PR is not yet merged, prefix the `type` frontmatter value with `in-flight
 
 File contents:
 
-```markdown
+````markdown
 ---
 date: YYYY-MM-DD
 type: bug | feature | refactor | decision | in-flight-bug | in-flight-feature | in-flight-refactor | in-flight-decision
@@ -177,40 +179,30 @@ pr: <pr url>
 
 # <topic>
 
-## What we set out to do
+## Decision
 
-<One paragraph. Pulled from issue Problem + Architecture.>
+<One sentence: what we learned and whether it should change future behavior.>
 
-## What actually ended up working
+## What changed
 
-<Output from Agent A. Include updated mermaid diagram if the architecture shifted.>
+<What was planned vs what shipped. Include updated mermaid only if reality changed.>
 
-## What surfaced in review
+## Why it mattered
 
-<Output from Agent B.>
+<Invariant, assumption, source of truth, or incentive that became clearer.>
 
-## First-principles postmortem
+## Example
 
-<What invariant mattered, what assumption changed, what source of truth or primitive concept became clearer.>
+```ts
+<small code, command, diff, or pseudocode example that shows the pattern>
+```
 
-## Game-theory postmortem
+## Rule candidate
 
-<What players/incentives/information asymmetries mattered. What mechanism aligned behavior. What bad equilibrium was avoided or discovered.>
-
-## Non-obvious lesson
-
-<Output from Agent C — the lesson paragraph.>
-
-## Reproducible pattern (if any)
-
-<Output from Agent C — the pattern section, or "None" if no pattern emerged.>
-
-## AGENTS.md amendment candidate (if any)
-
-<Output from Agent C — the amendment candidate, or "None" if no durable rule emerged.>
+<AGENTS.md amendment candidate, or "None".>
 
 This is a proposal. Review and edit AGENTS.md yourself if you want to adopt it — `/learn` never auto-edits AGENTS.md.
-```
+````
 
 ## Phase 5 — Commit and push
 
@@ -246,14 +238,27 @@ If the commit or push fails, surface the exact error and stop.
 
 ## Output
 
-Print:
+Use Plain Senior output:
 
-```text
-learning_file=<path>
-commit=<sha>
+````markdown
+## Decision
+Learning captured in <path>.
+
+## Why
 lesson=<one-line durable lesson>
 mechanism=<one-line mechanism/incentive lesson>
+
+## Example
+```bash
+git show --stat <sha>
 ```
+
+## Risk
+<open PR state, skipped amendment, or "None known">
+
+## Next
+<handoff line below>
+````
 
 Then:
 

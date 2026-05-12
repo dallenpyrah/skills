@@ -5,6 +5,8 @@ description: "Fan out six focused reviewer personas against the current PR — c
 
 # /code-review
 
+Before rendering user-facing output, read `../_shared/plain-output.md`.
+
 Run a multi-agent code review and post the validated findings to the current pull request.
 
 This is a review skill, not an autofix skill. It should produce high-signal review comments that improve code health without flooding the PR.
@@ -298,16 +300,27 @@ If GitHub returns a validation error, print the exact error, do not post a parti
 
 ## Output
 
-Print:
+Use Plain Senior output:
 
-```text
-<PR URL>
+````markdown
+## Decision
+Review posted to <PR URL>.
+
+## Why
 blockers=<n> majors=<n> minors=<n> nits=<n>
-dropped_by_validator=<n>
-summary_only=<n>
-inline_comments=<n>
-mechanism_notes=<n>
+dropped_by_validator=<n> summary_only=<n> inline_comments=<n>
+
+## Example
+```bash
+gh pr view --json number,url,title
 ```
+
+## Risk
+<validator drops, summary-only comments, or "None known">
+
+## Next
+Run `/address` to work through the comments.
+````
 
 Then end with exactly this line and stop:
 

@@ -27,12 +27,12 @@ printf '%s\n' "$PR_TITLE" | bunx commitlint
 
 ## PR body template
 
-Use this exact structure. Three elements. No others.
+Use this exact structure. Three elements. No others. Keep it plain and visual.
 
-```markdown
+````markdown
 ## Summary
 
-<2-4 sentences. What this PR does and why. Written against the issue's problem, not the diff.>
+<2-4 short sentences. Outcome first. What changed and why. Written against the issue's problem, not the diff.>
 
 ## Flow
 
@@ -41,7 +41,7 @@ Use this exact structure. Three elements. No others.
 ```
 
 Closes #<issue>
-```
+````
 
 ## Which diagram to pick
 
@@ -57,6 +57,7 @@ Closes #<issue>
 - Reference the issue's problem phrasing. If the problem was "duplicate invoices on webhook retry," the summary starts with "Prevents duplicate invoices when …", not "Refactors the webhook handler."
 - Call out breaking behavior or data migrations in one sentence if they exist.
 - No marketing language. No "This PR introduces a new …" filler.
+- Prefer concrete nouns and short sentences.
 
 ## Dirty repo rule
 
