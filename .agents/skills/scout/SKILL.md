@@ -1,17 +1,17 @@
 ---
 name: scout
-description: Pre-/interview grounding for unfamiliar domains. Maps one concrete library, module, external service, API, repo area, or pattern using repo search, tests, node_modules source, official docs, context7, gh_grep, exa, shelf, structural search, first-principles decomposition, and game-theoretic incentive analysis. Produces a one-screen brief. No recommendations yet. Hands off to /interview.
+description: Pre-/interview grounding for unfamiliar domains. Maps one concrete library, module, external service, API, repo area, or pattern using repo search, tests, node_modules source, official docs, context7, gh_grep, exa, shelf, structural search, first-principles decomposition, and game-theoretic incentive analysis. Produces a one-screen brief with at least one real code snippet and, where structure matters, one ASCII diagram. Hands off to /interview.
 ---
 
 # /scout
 
-Before rendering user-facing output, read `../_shared/plain-output.md`.
+Before rendering user-facing output, read `../_shared/plain-output.md` and `../_shared/ascii-diagrams.md`.
 
 Map the territory before `/interview`.
 
 Use this when the domain is unfamiliar enough that interviewing would stall on unknown facts: a new library, external service, repo area, architectural pattern, API, migration path, or failure mode.
 
-This skill is not research for research’s sake. It should uncover constraints that would change the architecture.
+This is not research for research's sake. It uncovers constraints that would change the architecture.
 
 ## Pick the topic
 
@@ -25,37 +25,21 @@ If the topic is missing, ask exactly one question and stop:
 
 > What domain should I scout?
 
-Bad topics:
+Bad topics: "the codebase", "the app", "architecture", "tests", "game theory".
 
-- “the codebase”
-- “the app”
-- “architecture”
-- “tests”
-- “game theory”
-
-Good topics:
-
-- “Effect Layer usage in this repo”
-- “billing webhook idempotency”
-- “GitHub PR review comments API”
-- “the auth session lifecycle”
-- “state modeling for imports”
-- “current fallback/default patterns”
-- “review comments as a code-health mechanism”
+Good topics: "Effect Layer usage in this repo", "billing webhook idempotency", "GitHub PR review comments API", "the auth session lifecycle", "state modeling for imports", "current fallback/default patterns".
 
 ## Scout stance
 
-Be concrete. Cite or do not claim.
+Be concrete. Cite or do not claim. **Show code, not summaries.**
 
-The output should help `/interview` ask better questions and help `/architect` avoid hallucinated constraints.
-
-Do not recommend the solution yet.
+The output should help `/interview` ask better questions and help `/architect` avoid hallucinated constraints. Do not recommend the solution yet.
 
 ## Shared contracts
 
-Before parallel exploration, read `../_shared/subagents.md`, `../_shared/evidence-quality.md`, and `../_shared/grounding.md`.
+Before parallel exploration, read `../_shared/subagents.md`, `../_shared/evidence-quality.md`, `../_shared/grounding.md`, `../_shared/ascii-diagrams.md`.
 
-Use host-neutral subagent roles. When subagents are available, use independent explorer subagents for repo evidence, git/GitHub history, dependency/API semantics, external references, failure modes, and incentive analysis. When subagents are unavailable, perform those lanes locally and state that parallel exploration was unavailable.
+When subagents are available, use independent explorer subagents for repo evidence, git/GitHub history, dependency/API semantics, external references, failure modes, incentive analysis. When unavailable, perform those lanes locally and say so.
 
 ## First-principles scouting
 
@@ -66,7 +50,7 @@ For the topic, identify:
 - invariants
 - constraints
 - irreversible decisions
-- state/lifecycle
+- state / lifecycle
 - external dependencies
 - failure modes
 - hidden assumptions
@@ -119,8 +103,6 @@ Run applicable sources in parallel. Skip a source only when its question does no
 
 ### 1. Local first
 
-Start with repo evidence:
-
 ```bash
 rg "<topic keywords>"
 rg "<type or function name>"
@@ -131,31 +113,15 @@ Use `rg -uuu` only when hidden/generated/ignored files are relevant.
 
 ### 2. Structural next
 
-Use ast-grep when text search is too shallow:
-
 ```bash
 ast-grep -p '<pattern>'
 ```
 
-Use it for:
-
-- broad `try/catch`
-- swallowed errors
-- raw `Promise` in Effect-owned code
-- `extends`
-- status booleans/nullables
-- direct I/O calls
-- direct vendor SDK calls
-- default/fallback patterns
-- repeated wrapper shapes
-- broad manager/service/helper modules
-- duplicated source-of-truth patterns
+Use it for: broad `try/catch`, swallowed errors, raw `Promise` in Effect-owned code, `extends`, status booleans/nullables, direct I/O calls, direct vendor SDK calls, default/fallback patterns, repeated wrapper shapes, broad manager/service/helper modules, duplicated source-of-truth patterns.
 
 ### 3. Definitions and references
 
-Use symbol search, type search, or GitHub Code Search when local navigation is insufficient.
-
-Find defining modules, exported interfaces, call sites, tests, adapters, migration files, and deleted/renamed predecessors.
+Use symbol search, type search, or GitHub Code Search when local navigation is insufficient. Find defining modules, exported interfaces, call sites, tests, adapters, migration files, and deleted/renamed predecessors.
 
 ### 4. Package/source truth
 
@@ -165,13 +131,11 @@ When a library matters:
 2. Inspect local `node_modules` source/types.
 3. Use official docs for semantics.
 4. Use context7 for current version-specific docs when available.
-5. Use public code search only as supporting evidence, never as source of truth.
+5. Use public code search only as supporting evidence, never source of truth.
 
 ### 5. External service truth
 
-When an external service matters, official docs win.
-
-Scout API shape, auth model, rate limits, retry semantics, idempotency, pagination, webhooks, failure modes, permission model, pricing/quotas, eventual consistency, deprecation/versioning, and security constraints.
+Official docs win. Scout API shape, auth model, rate limits, retry semantics, idempotency, pagination, webhooks, failure modes, permission model, pricing/quotas, eventual consistency, deprecation/versioning, security constraints.
 
 ### 6. Stop condition
 
@@ -183,18 +147,31 @@ Do not keep collecting facts for completeness.
 
 Use Plain Senior output. One screen.
 
+**The output MUST include at least one real code snippet from the source it cites.** Quoted code beats prose every time — Will Larson: "specific creates alignment; generic creates the illusion of alignment."
+
+**Add an ASCII diagram only when structure matters more than words** (lifecycle, module flow, data path). See `../_shared/ascii-diagrams.md`.
+
 ````markdown
 ## Decision
-<domain scouted and the main constraint found>
+<domain scouted and the main constraint found, one sentence>
 
 ## Why
-- Evidence: <source> — <what it proved>
-- Prior art: <repo fact with path>
+- Evidence: `<file:line>` — <what it proved>
+- Prior art: `<file:line>` — <repo fact>
 - Constraint: <fact that changes design or interview questions>
 
-## Example
-```bash
-<command used to prove the key repo fact>
+## Code
+
+```ts
+// Real snippet from the source. Cite the file path above the block.
+// `path/to/file.ts:42-58`
+export const example = …
+```
+
+## Shape
+
+```
+<ASCII diagram of the structure — only if structure matters>
 ```
 
 ## Risk
@@ -214,6 +191,8 @@ Open questions for `/interview`:
 - One concrete topic.
 - One screen.
 - Cite or do not claim.
+- **Quote real code.** A pasted snippet beats three paragraphs about it.
+- **ASCII for diagrams.** No mermaid.
 - Trade-offs, not feature lists.
 - No recommendations yet.
 - No architecture yet.
@@ -222,7 +201,7 @@ Open questions for `/interview`:
 - Official docs beat blog posts for API semantics.
 - Public code search shows patterns, not correctness.
 - If a source was skipped, say why.
-- If evidence conflicts, name the conflict instead of resolving it by guess.
+- If evidence conflicts, name the conflict instead of resolving by guess.
 - If a local shortcut creates global cost, surface it.
 - If an interface creates bad incentives, surface it.
 

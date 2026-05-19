@@ -8,7 +8,7 @@ Start with the decision. Then show the proof. Then show the next move.
 
 Plain Senior means short, concrete, human prose. It does not mean childish prose.
 
-## Default Shape
+## Default shape
 
 Use this shape unless the skill needs a stricter artifact format:
 
@@ -21,7 +21,7 @@ Use this shape unless the skill needs a stricter artifact format:
 
 ## Example
 ```ts
-<small code, command, diff, mermaid, or pseudocode example>
+<small code, ASCII diagram, command, diff, or pseudocode>
 ```
 
 ## Risk
@@ -31,8 +31,11 @@ Use this shape unless the skill needs a stricter artifact format:
 <exact handoff or command>
 ````
 
-## Rules
+## Information density (Tufte)
 
+> Above all else, show the data. — Edward Tufte
+
+- Subtract anything that isn't carrying meaning.
 - One screen by default.
 - One idea per paragraph.
 - Active voice.
@@ -43,7 +46,12 @@ Use this shape unless the skill needs a stricter artifact format:
 - No repeated summaries.
 - No unexplained jargon. Define it inline in six words or fewer.
 - No hedge words that hide the decision.
-- Every final skill output includes one useful example: command, code, diff, pseudocode, mermaid, or exact file path.
+
+## Diagrams
+
+**ASCII diagrams only.** No mermaid. See `./ascii-diagrams.md` for the character palette, weight conventions, and pattern catalog.
+
+A diagram earns its space only when it shows a structural relationship that prose cannot. If prose works, skip the diagram.
 
 ## Examples
 
@@ -69,16 +77,24 @@ Use a diff when the skill proposes a text change:
 + Provider failure returns a typed error.
 ```
 
-Use mermaid only when the picture is clearer than prose:
+Use an ASCII diagram when structure matters more than words:
 
-```mermaid
-flowchart LR
-  Input --> Validate --> Execute --> Observe
 ```
+┌───────┐  ─>  ┌──────────┐  ─>  ┌─────────┐
+│ Input │      │ Validate │      │ Execute │
+└───────┘      └──────────┘      └─────────┘
+```
+
+## Every final output includes one example
+
+Command, code, diff, ASCII diagram, pseudocode, or exact file path. Pick the form that makes the decision provable.
 
 ## Forbidden
 
+- Mermaid diagrams. Use ASCII.
 - Long mechanical templates when three sections would do.
 - Tables with more than five columns.
 - Lists of files when a behavior summary is clearer.
 - "Basically," "essentially," "it is worth noting," and similar filler.
+- Restating the user's request before answering.
+- Trailing summaries when the diff or output is visible.

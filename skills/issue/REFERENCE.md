@@ -1,59 +1,55 @@
 # /issue — Reference
 
-## Issue body template
+Quick reference. The full template, philosophy, and process live in `SKILL.md`. Read that first.
 
-Use this exact structure. Section order is fixed. Do not add sections. Keep each section plain and short.
+## Body template recap
 
-````markdown
+See `SKILL.md` for the canonical version. Section order is fixed:
+
+```
+Header (Owner · Appetite · Status · Part of)
 ## Problem
-
-<One tight paragraph. What is wrong, who feels it, what must remain true. No solution language here.>
-
-## Architecture
-
-<Short prose description, 1-2 paragraphs, of the proposed architecture from `/architect`.>
-
-```mermaid
-<flowchart or classDiagram from /architect>
+## Outcome
+## Solution sketch    (ASCII diagram + code contract)
+## Files              (Create / Modify)
+## Acceptance criteria
+## Rabbit holes
+## No-gos
+## References
+## Depends on         (or Children, on epics)
 ```
-
-<If the change has lifecycle, include the stateDiagram-v2 as well:>
-
-```mermaid
-<stateDiagram-v2 from /architect>
-```
-
-## Modules
-
-| # | Name | Responsibility | Interface | Hides | Dependency |
-|---|---|---|---|---|---|
-| 1 | `<Name>` | <one sentence> | `<signature>` | <impl detail> | <in-process / local-substitutable / ports-and-adapters / true-external> |
-| 2 | ... | | | | |
-
-## Verification
-
-<How we will prove this works at the public interface. One paragraph.>
-
-## Out of scope
-
-- <explicit non-goal>
-- <explicit non-goal>
-````
 
 ## Heredoc invocation pattern
 
-When calling `gh issue create`, always use a temp file rather than inlining the body — mermaid blocks contain backticks which break shell quoting.
+Always use a temp file rather than inlining the body.
 
 ```bash
 BODY_FILE="$(mktemp -t issue-body-XXXXXX.md)"
 cat > "$BODY_FILE" <<'EOF'
+**Owner:** @example
+**Appetite:** 1.5 weeks
+**Status:** Ready
+**Part of:** #100
+
 ## Problem
 
-...
+…
 
-## Architecture
+## Outcome
 
-...
+- …
+
+## Solution sketch
+
+```
+┌─────────┐  ─>  ┌──────────┐
+│ Input   │      │ Process  │
+└─────────┘      └──────────┘
+```
+
+```ts
+export type Foo = …
+```
 
 (rest of body)
 EOF
@@ -68,12 +64,45 @@ rm "$BODY_FILE"
 - Under 70 characters.
 - No issue number prefix, no trailing period.
 - No emoji.
+- Plain language. No internal jargon.
 
-## Mermaid tips
+## ASCII diagram tips
 
-- `flowchart LR` for request/response or data flow.
-- `flowchart TD` when the shape is hierarchical.
-- `classDiagram` for module graphs with relationships.
-- `stateDiagram-v2` for lifecycle — always when an entity has states.
-- Keep node labels short. Use `"Long label here"` quoting for multi-word labels.
-- Verify the diagram renders on GitHub before closing the terminal — paste the issue URL into your browser and confirm.
+Use ASCII, never mermaid. See `../_shared/ascii-diagrams.md` for the character palette and pattern catalog.
+
+- Pick one weight per role (Standard `─│`, Heavy `━┃`, Double `═║`, Rounded `╭╮`).
+- Keep diagrams under 80 chars wide.
+- One module/flow diagram per issue is usually enough. Add a state diagram only when the thing has lifecycle.
+- Wrap the diagram in a fenced ``` ``` block so whitespace survives.
+- Label connections (`HTTP`, `tool call`, `peer DM`) when intent isn't obvious from the boxes.
+
+## Common diagram shapes
+
+```
+Module flow:
+┌─────────┐  ─>  ┌──────────┐  ─>  ┌──────────┐
+│ Browser │      │  /api/x  │      │ Backend  │
+└─────────┘      └──────────┘      └──────────┘
+
+State machine:
+ ┌─────────┐ start  ┌────────┐ finish ┌──────┐
+ │ Pending │ ─────> │ Active │ ─────> │ Done │
+ └─────────┘        └────────┘        └──────┘
+
+Sequence:
+Client  ─ POST ─>  Route  ───>  Worker
+                     │            │
+                     │ <───────── │  ack
+   <── 200 OK ────── │            │
+```
+
+## Epic-only
+
+Add `--label epic` on creation. Replace `Depends on` with `Children` containing the child issue numbers as a checkbox list:
+
+```markdown
+## Children
+
+- [ ] #N — child issue (appetite)
+- [ ] #N — child issue (appetite · depends on #X)
+```

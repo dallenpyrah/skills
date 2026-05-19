@@ -33,12 +33,12 @@ Refs #<issue>
 
 Type is one of `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. One logical change per commit.
 
-6. If the architecture's mermaid diagram must change during execution (e.g., a module boundary shifted because reality pushed back), edit the issue body:
+6. If the architecture's ASCII diagram must change during execution (e.g., a module boundary shifted because reality pushed back), edit the issue body:
 
 ```bash
 BODY_FILE="$(mktemp -t issue-body-XXXXXX.md)"
 gh issue view <n> --json body -q .body > "$BODY_FILE"
-# edit the mermaid block in $BODY_FILE
+# edit the ASCII diagram block in $BODY_FILE
 gh issue edit <n> --body-file "$BODY_FILE"
 rm "$BODY_FILE"
 ```

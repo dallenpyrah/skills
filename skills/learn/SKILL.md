@@ -86,7 +86,7 @@ The main agent decides whether the lesson is real enough to write; subagents pro
 
 Compare the issue’s Architecture section with the final code.
 
-Report what matches, what changed, why it changed, whether the mermaid diagram still describes reality, and replacement diagram if needed.
+Report what matches, what changed, why it changed, whether the ASCII diagram still describes reality, and replacement diagram if needed.
 
 Return 150–300 words.
 
@@ -185,7 +185,7 @@ pr: <pr url>
 
 ## What changed
 
-<What was planned vs what shipped. Include updated mermaid only if reality changed.>
+<What was planned vs what shipped. Include an updated ASCII diagram only if reality changed.>
 
 ## Why it mattered
 

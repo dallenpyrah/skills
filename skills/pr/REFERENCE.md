@@ -36,8 +36,8 @@ Use this exact structure. Three elements. No others. Keep it plain and visual.
 
 ## Flow
 
-```mermaid
-<flowchart LR | flowchart TD | sequenceDiagram — see below>
+```
+<ASCII diagram — see ../_shared/ascii-diagrams.md for the character palette and patterns>
 ```
 
 Closes #<issue>
@@ -45,11 +45,47 @@ Closes #<issue>
 
 ## Which diagram to pick
 
-- **`flowchart LR`** — request/response shapes, data flow through a pipeline, left-to-right causality.
-- **`flowchart TD`** — hierarchical or branching logic, top-down decision trees.
-- **`sequenceDiagram`** — multi-actor interactions, request/response over network, anything with temporal ordering across participants.
-- **`stateDiagram-v2`** — only if the PR introduces or changes a lifecycle. Usually the issue already has this; don't duplicate unless it changed.
-- **`classDiagram`** — only for module-relationship PRs (extractions, splits, renames). Rare.
+ASCII diagrams only. Use whichever pattern shows the flow best:
+
+- **Module flow (left to right)** — request/response shapes, data flow through a pipeline, left-to-right causality.
+
+  ```
+  ┌──────┐  ─>  ┌──────────┐  ─>  ┌─────────┐
+  │ User │      │ Validate │      │ Persist │
+  └──────┘      └──────────┘      └─────────┘
+  ```
+
+- **Hierarchy (top down)** — decision branches, layered components.
+
+  ```
+        ┌─────────┐
+        │  Route  │
+        └────┬────┘
+       ┌─────┴─────┐
+       v           v
+   ┌───────┐   ┌────────┐
+   │ Auth  │   │ Public │
+   └───────┘   └────────┘
+  ```
+
+- **Sequence / swimlane** — multi-actor interactions, temporal ordering.
+
+  ```
+  Client  ─ POST ─>  Route  ───>  Worker
+                       │            │
+                       │ <───────── │  ack
+     <── 200 OK ────── │            │
+  ```
+
+- **State diagram** — only if the PR introduces or changes a lifecycle.
+
+  ```
+   ┌─────────┐  start  ┌────────┐  finish  ┌──────┐
+   │ Pending │ ──────> │ Active │ ───────> │ Done │
+   └─────────┘         └────────┘          └──────┘
+  ```
+
+Keep diagrams under 80 chars wide.
 
 ## Writing the Summary
 
@@ -89,8 +125,10 @@ cat > "$BODY_FILE" <<'EOF'
 
 ## Flow
 
-```mermaid
-<diagram>
+```
+┌──────┐  ─>  ┌──────────┐  ─>  ┌─────────┐
+│ User │      │ Validate │      │ Persist │
+└──────┘      └──────────┘      └─────────┘
 ```
 
 Closes #<n>
@@ -111,6 +149,7 @@ rm "$BODY_FILE"
 ## What the PR body is NOT
 
 The PR body is a signal to reviewers: "this is what I shipped and here's the shape of it." It is not:
+
 - A diff summary (GitHub shows the diff).
 - A test plan (the issue has verification).
 - A changelog entry (changelogs live elsewhere).

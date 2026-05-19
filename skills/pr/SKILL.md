@@ -1,11 +1,11 @@
 ---
 name: pr
-description: Open a pull request with a strict minimal body — Summary (2-4 sentences) plus a mermaid Flow diagram plus `Closes #<issue>`. No changes list, no tests section, no breaking-changes section. Works in dirty repos by committing only PR-relevant changes, creates a branch from trunk without asking, pushes the branch, watches GitHub Actions until they terminate, then hands off to /code-review.
+description: Open a pull request with a strict minimal body — Summary (2-4 sentences) plus an ASCII Flow diagram plus `Closes #<issue>`. No changes list, no tests section, no breaking-changes section. Works in dirty repos by committing only PR-relevant changes, creates a branch from trunk without asking, pushes the branch, watches GitHub Actions until they terminate, then hands off to /code-review.
 ---
 
 # /pr
 
-Before rendering user-facing output, read `../_shared/plain-output.md`.
+Before rendering user-facing output, read `../_shared/plain-output.md` and `../_shared/ascii-diagrams.md`.
 
 Open a pull request with a minimal, opinionated body.
 
@@ -70,11 +70,11 @@ If validation fails, fix the title and rerun validation. Do not open a PR with a
 
 8. Build the PR body using the template in `REFERENCE.md`:
    - `## Summary` — 2-4 sentences. What and why. Written against the issue's problem statement.
-   - `## Flow` — a mermaid `flowchart` or `sequenceDiagram` showing the runtime or user flow introduced by this PR. Required.
+   - `## Flow` — an ASCII diagram showing the runtime or user flow introduced by this PR (see `../_shared/ascii-diagrams.md`). Required.
    - Final line: `Closes #<n>`.
    - **Nothing else.** No changes section, no test plan, no screenshots block, no rollout plan.
 
-9. Write the body to a temp file (mermaid needs file-based --body-file, not inline).
+9. Write the body to a temp file (the heredoc keeps the ASCII diagram intact).
 
 10. Push the branch:
 
