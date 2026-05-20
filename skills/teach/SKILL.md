@@ -1,73 +1,41 @@
 ---
 name: teach
-description: Teach Dallen a concept, solution, or pattern using his learning style — story → problem → simple version → core principle → examples → precision → wrong-vs-right model → check. Use when Dallen says /teach, asks to learn/understand/study a concept, or asks to be taught the solution you just proposed (architecture, bug fix, design, library behavior).
+description: Teach a concept, solution, or pattern one layer at a time with grounded examples. Uses the attention contract and avoids dumping full derivations unless requested.
 ---
 
 # /teach
 
-Before rendering user-facing output, read `../_shared/plain-output.md`.
+Read the shared contracts before output: `../_shared/operator-output.md`, `../_shared/attention-budget.md`, `../_shared/evidence-record.md`, `../_shared/state.md`, `../_shared/cognitive-load.md`, `../_shared/collaboration.md`.
 
-Teach a specific concept using the `dallen-learning-style` profile. That profile owns the *how*. This skill picks the target, grounds it, and renders the template.
+## Purpose
 
-## Pick the target
+Make one concept usable without overwhelming the learner.
 
-The concept comes from one of these, in order:
+## Inputs
 
-1. An explicit topic in the invocation — e.g. `/teach database indexes`, `/teach effect layers`.
-2. The active conversation artifact — the architecture from `/architect`, the fix from `/debug`, the design under review, the library you just used.
-3. If neither is clear, ask exactly one question: **"What concept should I teach?"** Then stop and wait.
+Named concept, recent architecture/fix/design, repo code, library/API question, or user request to learn.
 
-"Teach me everything about X" is not a target — narrow it to one load-bearing idea first.
+## Reads
 
-## Ground before teaching
+Actual repo code for repo topics, official docs/context7/package source for library/API behavior, and `.context/` artifacts when teaching a recent workflow result.
 
-If the topic is repo code, library behavior, or an API shape: read the actual code or run `context7` / `gh_grep` before writing. Never teach from training-data assumptions — hallucinated mechanism is worse than no explanation.
+## Writes
 
-## Render
+- `.context/teach.md` when the explanation depends on evidence or should persist
+- `.context/session-state.md` for substantial teaching sessions
 
-Use Plain Senior output. One screen. Plain English before jargon. Examples before abstraction.
+## Process
 
-````markdown
-## Decision
-<the concept in one plain sentence>
+1. Identify the one concept being taught.
+2. Ground facts before explaining repo/API behavior.
+3. Teach the first useful layer only: problem, simple model, concrete example, where it fails.
+4. Ask at most three check questions or offer the next layer.
+5. Put extended notes or source details in `.context/teach.md` when needed.
 
-## Story
-<the situation that creates the need>
+## Operator Output
 
-## Why
-<what breaks without this idea, then the core principle>
+Use compact teaching prose, not the workflow `Decision` template unless a decision is being taught. Include one concrete example and the next learning step.
 
-## Example
-```ts
-<small code or pseudocode example>
-```
+## Stop Conditions
 
-## Mental Model
-- Wrong: <likely wrong model>
-- Right: <correct model>
-- Flip: <what changes>
-
-## Risk
-<where the concept breaks down>
-
-## Next
-1. <diagnostic question — "why does this work" / "where would this fail" / "what changes if X changes">
-2. <second question, different angle>
-3. <teach-back OR build-the-smallest-version prompt>
-````
-
-## Rules
-
-- **Context before definition.** Never lead with "X is a Y that does Z." Lead with the situation.
-- **Examples before abstraction.** Name the pattern *after* the examples, not before.
-- **Define jargon inline on first use, six words max — or do not use it.**
-- **Analogies must be structural.** Map → predict → break. If the analogy does not help predict behavior, cut it.
-- **Three questions max at the end.** Probe, not quiz.
-- **One screen.** If it overflows, the topic is too broad — narrow it and ask which sub-concept to teach next.
-- **No hedging filler.** Strip "essentially," "basically," "it's worth noting." Say the thing.
-
-## Output
-
-The rendered explanation is the output. It must include a concrete code or pseudocode example. End with exactly this line and stop:
-
-> Teach delivered. Answer the check questions, or ask for the next layer.
+Stop if the topic is ambiguous and cannot be inferred, or if deeper layers require user choice.

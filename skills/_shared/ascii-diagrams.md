@@ -1,8 +1,8 @@
 # ASCII Diagrams
 
-Shared reference for every skill that draws a diagram. Use this instead of mermaid.
+Shared reference for every skill that draws a diagram. Use this instead of Mermaid.
 
-## Why ASCII, not mermaid
+## Why ASCII, not Mermaid
 
 - Renders everywhere: GitHub, terminals, plain markdown, agent context, copy-paste.
 - Information-dense: no rendering pass, no theme drift, no broken-image state.

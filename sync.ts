@@ -8,8 +8,6 @@ const ROOT = import.meta.dir;
 const HOME = homedir();
 const SOURCE = join(ROOT, "skills");
 const TARGETS: ReadonlyArray<{ path: string; preserve?: ReadonlySet<string> }> = [
-  { path: join(ROOT, ".agents", "skills") },
-  { path: join(ROOT, ".claude", "skills") },
   { path: join(HOME, ".agents", "skills") },
   { path: join(HOME, ".claude", "skills") },
   { path: join(HOME, ".codex", "skills"), preserve: new Set([".system"]) },

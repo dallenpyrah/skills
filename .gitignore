@@ -2,3 +2,5 @@
 *.local
 .env
 node_modules/
+.agents/
+.claude/

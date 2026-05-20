@@ -134,7 +134,7 @@ Return JSON only.
 
 You are reviewing maintainability and architecture only.
 
-Use the architecture spine from `AGENTS.md`, `AGENTS_sources.md`, and the `/architect` skill.
+Use the architecture spine from `AGENTS.md` and the `/architect` skill.
 
 Primary question:
 

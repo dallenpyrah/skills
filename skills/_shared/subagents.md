@@ -4,6 +4,8 @@ The main agent owns final decisions, synthesis, edits, verification, commits, po
 
 Use subagents only when the work is bounded and independent enough that delegation improves evidence quality, review quality, or throughput without hiding ownership.
 
+More agents increase coordination load. Use the fewest agents that reduce intrinsic task load.
+
 ## Roles
 
 - **Explorer:** read-only evidence gathering. Reports facts and uncertainty; does not recommend unless asked.
@@ -23,6 +25,7 @@ Every subagent prompt must include:
 - expected output shape
 - evidence or confidence requirement
 - stop condition
+- where to write or summarize evidence in `.context/`
 
 Worker prompts must also include:
 
@@ -41,3 +44,13 @@ Describe subagent work by role, not by a vendor-specific tool call.
 - Fallback: perform the role locally and state that parallel subagents were unavailable.
 
 Subagents do not own architecture changes. If delegated work invalidates the plan, the main agent stops and escalates to the owning workflow phase.
+
+## Collective Working Memory
+
+Subagents report into one evidence surface:
+
+- `.context/<workflow>/<agent-name>.md` for detailed notes
+- `.context/<workflow>.md` for synthesized findings
+- `.context/session-state.md` for locked decisions and next action
+
+The user should never have to reconcile parallel reports manually.

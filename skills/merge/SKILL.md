@@ -1,138 +1,44 @@
 ---
 name: merge
-description: Merge the current PR after /learn has committed and pushed the learning file. Verifies a clean tree, open PR, up-to-date pushed head, passing required checks, and reviewability before merging with the repository's safe strategy, deleting the branch, checking out the base branch, and pulling it forward.
+description: Merge the current PR through GitHub after verifying branch state, reviewability, checks, and user/repo constraints. Writes merge evidence to .context/merge.md.
 ---
 
 # /merge
 
-Before rendering user-facing output, read `../_shared/plain-output.md`.
+Read the shared contracts before output: `../_shared/operator-output.md`, `../_shared/attention-budget.md`, `../_shared/evidence-record.md`, `../_shared/state.md`, `../_shared/cognitive-load.md`, `../_shared/collaboration.md`.
 
-Merge the reviewed PR after the learning file has been committed and pushed.
+## Purpose
 
-## Preconditions
+Land the PR without bypassing review or branch safety.
 
-1. `/learn` has completed on this PR and pushed its learning commit.
-2. The current branch is the PR branch, not `main`, `master`, or `trunk`.
-3. Working tree is clean: `git status --porcelain` is empty.
-4. `gh` authenticated.
-5. The PR is open.
+## Inputs
+
+Current PR/branch, `.context/session-state.md`, CI state, review state, user instruction.
+
+## Reads
+
+Git status, PR metadata, checks, review decision, branch protection/merge state, `.context/` artifacts.
+
+## Writes
+
+- merged PR through GitHub
+- branch cleanup when safe
+- `.context/merge.md`
+- `.context/session-state.md`
 
 ## Process
 
-1. Identify the current branch and PR:
+1. Verify clean relevant tree and correct PR/branch.
+2. Verify pushed head, CI, review state, and mergeability.
+3. Merge through GitHub using repo-safe strategy.
+4. Delete branch and update base branch only when safe and expected.
+5. Record merge URL/SHA/checks in `.context/merge.md`.
+6. Update session state.
 
-```bash
-git branch --show-current
-gh pr view --json number,url,state,baseRefName,headRefName,headRefOid,isDraft,reviewDecision,mergeStateStatus
-```
+## Operator Output
 
-Stop if:
+Return merge decision, up to three evidence bullets, remaining risk, and next action. If merged, next action is complete.
 
-- branch is `main`, `master`, or `trunk`
-- no PR is associated with the branch
-- PR state is not `OPEN`
-- PR is draft
-- `headRefName` does not match the current branch
+## Stop Conditions
 
-2. Verify `/learn` ran for this PR.
-
-Use the PR body to find `Closes #<issue>`, then check the current branch contains a pushed learning commit:
-
-```bash
-gh pr view --json body -q .body
-git log --oneline -20 --grep "docs: capture learning for #<issue>"
-git status --porcelain=v1 --branch
-```
-
-Stop if no matching commit exists. Stop if the branch status shows the local branch is ahead of upstream; tell the user to run `/learn` again or push the missing commit.
-
-3. Verify checks are green.
-
-```bash
-gh pr checks --watch --fail-fast
-```
-
-- If GitHub reports no checks, treat that as `none-configured` and continue.
-- If checks fail, surface the failing check names and stop.
-- If checks are pending, wait because `--watch` blocks until termination.
-
-4. Verify review state.
-
-Use `reviewDecision` from `gh pr view`:
-
-- `APPROVED` — continue.
-- empty/null — continue only if the repo has no review requirement; state that explicitly in output.
-- `REVIEW_REQUIRED` or `CHANGES_REQUESTED` — stop. Do not bypass review.
-
-5. Capture the exact head commit and merge.
-
-Use `--match-head-commit` so a race cannot merge a different commit than the one verified.
-
-Default strategy is squash because the compound workflow produces many mechanical commits and the issue/PR preserve the history. If the repository only allows merge queues, omit the strategy and let GitHub enqueue it.
-
-```bash
-HEAD_SHA=$(git rev-parse HEAD)
-gh pr merge --squash --delete-branch --match-head-commit "$HEAD_SHA"
-```
-
-If GitHub reports the repository requires a merge queue or rejects the squash strategy, do not guess repeatedly. Read the error, then use the smallest compatible command:
-
-```bash
-gh pr merge --delete-branch --match-head-commit "$HEAD_SHA"
-```
-
-Do not use `--admin`.
-
-6. Move the local checkout to the base branch and update it.
-
-```bash
-git checkout "<baseRefName>"
-git pull --ff-only origin "<baseRefName>"
-```
-
-If the local branch deletion did not happen automatically, delete it after checkout:
-
-```bash
-git branch -d "<headRefName>"
-```
-
-## Output
-
-If the PR merged immediately, use Plain Senior output:
-
-````markdown
-## Decision
-PR merged: <url>.
-
-## Why
-- merge_result=merged
-- base=<baseRefName>
-- head=<verified HEAD_SHA>
-
-## Example
-```bash
-gh pr merge --squash --delete-branch --match-head-commit "$HEAD_SHA"
-```
-
-## Risk
-None known.
-
-## Next
-Base branch <base> is up to date.
-````
-
-Then end with exactly this line and stop:
-
-> PR merged: <url>. Base branch <base> is up to date.
-
-If GitHub queued the PR instead of merging immediately, print the queue status using the same shape and end with exactly this line and stop:
-
-> PR queued: <url>. GitHub will merge it when the merge queue admits it.
-
-## Rules
-
-- Never merge from trunk directly; this skill only merges a PR branch through GitHub.
-- Never use `--admin`.
-- Never merge with failing checks, unresolved changes requested, or a dirty working tree.
-- Never merge a commit different from the one checked by this skill; use `--match-head-commit`.
-- If GitHub queues the PR instead of merging immediately, say so and do not claim the base branch contains the changes yet.
+Stop if checks fail, review/merge state is unsafe, branch state is ambiguous, or the requested merge would bypass repo policy.
