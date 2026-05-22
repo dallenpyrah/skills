@@ -1,6 +1,6 @@
 ---
 name: work
-description: Implement the requested change on the current branch using the best available contract: issue, architecture, user request, or repo evidence. Does not require /architect or /review to have run. Hands naturally to /test.
+description: "Implement the requested change on the current branch using the best available contract: issue, architecture, user request, or repo evidence. Does not require /architect or /review to have run. Hands naturally to /test."
 ---
 
 # /work

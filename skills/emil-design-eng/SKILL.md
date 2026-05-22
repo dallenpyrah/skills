@@ -1,6 +1,6 @@
 ---
 name: emil-design-eng
-description: Apply Emil Kowalski-style UI polish: interaction details, component feel, animation restraint, and invisible product quality. Uses progressive disclosure instead of long design essays.
+description: "Apply Emil Kowalski-style UI polish: interaction details, component feel, animation restraint, and invisible product quality. Uses progressive disclosure instead of long design essays."
 ---
 
 # Design Engineering

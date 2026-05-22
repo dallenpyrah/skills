@@ -1,6 +1,6 @@
 ---
 name: emilkowal-animations
-description: Apply Emil Kowalski-style animation guidance for web interfaces: purposeful motion, correct easing, interruptibility, performance, reduced motion, and interaction feel.
+description: "Apply Emil Kowalski-style animation guidance for web interfaces: purposeful motion, correct easing, interruptibility, performance, reduced motion, and interaction feel."
 ---
 
 # Animation Best Practices
